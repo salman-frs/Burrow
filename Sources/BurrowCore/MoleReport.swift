@@ -14,6 +14,48 @@ public struct MoleReport: Sendable, Equatable {
     public func summaryBytes(labeled label: String) -> Int64? {
         summary.first { $0.hasPrefix(label) }.flatMap { ByteSize.firstSize(in: $0) }
     }
+
+    /// Sections with at least one row Mole would clean.
+    public var cleanableSections: [ReportSection] {
+        sections.filter { section in section.rows.contains { $0.status == .pending } }
+    }
+
+    /// Rows Mole sizes but never removes. Only those that name a path are kept, since the
+    /// rest point at a command instead, and a path Mole lists twice appears once.
+    public var reviewItems: [ReviewItem] {
+        var seen: Set<String> = []
+        return rows.compactMap { row -> ReviewItem? in
+            guard row.status == .review, let bytes = row.bytes,
+                  let shown = row.detail.components(separatedBy: " · ").last,
+                  shown.hasPrefix("~/") || shown.hasPrefix("/")
+            else { return nil }
+            let path = Paths.expandingTilde(shown)
+            guard seen.insert(path).inserted else { return nil }
+            return ReviewItem(title: row.title, path: path, bytes: bytes)
+        }
+        .sorted { $0.bytes > $1.bytes }
+    }
+
+    /// How far a streamed `mo optimize` has got with one of its tasks.
+    public func progress(of task: String, finished: Bool) -> TaskProgress {
+        guard let index = sections.firstIndex(where: { $0.title == task }) else { return .pending }
+        if index == sections.count - 1 && !finished { return .running }
+        let rows = sections[index].rows
+        if rows.contains(where: { $0.status == .failed }) { return .failed }
+        if !rows.isEmpty && rows.allSatisfy({ $0.status == .attention }) { return .skipped }
+        return .done
+    }
+}
+
+public struct ReviewItem: Sendable, Equatable, Identifiable {
+    public let title: String
+    public let path: String
+    public let bytes: Int64
+    public var id: String { path }
+}
+
+public enum TaskProgress: Sendable, Equatable {
+    case pending, running, done, skipped, failed
 }
 
 public struct ReportSection: Sendable, Equatable, Identifiable {

@@ -4,18 +4,17 @@ A native macOS app for cleaning, uninstalling and maintaining your Mac. Every sc
 
 ## What it does
 
+Burrow draws your disk as a cross-section of dots: free space is the air on top, and the layers below are what fills it, from macOS at the bottom to your home folder at the top.
+
 | Screen | Mole command | Notes |
 |---|---|---|
-| Overview | `mo status --watch` | Live health, CPU, memory, disk, battery, network |
-| Cleanup | `mo clean --dry-run`, `mo clean` | Preview first. System caches are optional and ask for your password |
-| Optimize | `mo optimize --dry-run`, `mo optimize` | Tasks that need admin access are skipped if you decline |
-| Uninstaller | `mo uninstall --list`, `--dry-run`, `mo uninstall` | Review every file before anything moves to the Trash |
-| App Slimming | `mo slim --dry-run`, `mo slim` | Lists universal apps; you pick them in Mole's own picker, which Burrow opens in Terminal |
-| Space Lens | `mo analyze --json` | Treemap and drill-down; Move to Trash is limited to your home folder |
-| Project Purge | `mo purge` | Build artifacts untouched for 7 days |
-| Installers | `mo installer` | Moves `.dmg`, `.pkg`, `.iso`, `.xip` and installer archives to the Trash |
-| History | `mo history --json` | Everything Mole removed or changed |
-| Settings | `~/.config/mole/whitelist`, `purge_paths`, `mo touchid` | Shared with the Mole CLI |
+| Dig | `mo clean --dry-run`, `mo installer --dry-run`, `mo purge --dry-run`, then `mo clean`, `mo installer`, `mo purge` | One scan for caches, installers and build leftovers. What it finds glows as veins in the top layer. Caches clear together; Keep adds a path to Mole's protected list. Installers and build leftovers are picked one by one. System caches are optional and ask for your password |
+| Tune up | `mo optimize --dry-run`, `mo optimize` | Opens from Dig. Tasks that need admin access are skipped if you decline |
+| Vitals | `mo status --watch` | Processor, memory and battery on Dig; click for the health score, busiest apps and network |
+| Apps | `mo uninstall --list`, `--dry-run`, `mo uninstall`, `mo slim --dry-run` | Pick apps or drop them on the panel. Mole's plan is measured into app, data, caches and settings before anything moves to the Trash. Slimming opens Mole's own picker in Terminal |
+| Space | `mo analyze --json` | Folders as layers; double-click to open one. Move to Trash is limited to your home folder |
+| Log | `mo history --json` | Everything Mole removed or changed, with the files of each run |
+| Settings (⌘,) | `~/.config/mole/whitelist`, `purge_paths`, `mo touchid` | Shared with the Mole CLI |
 
 ## How Burrow drives Mole
 
@@ -28,7 +27,7 @@ A native macOS app for cleaning, uninstalling and maintaining your Mac. Every sc
 
 ## Build
 
-Requires macOS 14 or later, Swift 6 (Command Line Tools are enough) and Go.
+Requires macOS 14 or later, Swift 6 (Command Line Tools are enough) and Go. On macOS 26 and later the panels use Liquid Glass; earlier versions get a material with the same layout.
 
 ```bash
 ./scripts/build-app.sh
