@@ -12,8 +12,6 @@ struct DigItem: Identifiable, Equatable {
     var included = true
 }
 
-/// One vein Dig found. Caches are whatever `mo clean` would remove in one of its sections; installers and
-/// build leftovers are lists Mole lets you pick from.
 struct DigCategory: Identifiable, Equatable {
     enum Kind { case cache, installers, projects }
 
@@ -94,7 +92,6 @@ final class DigModel {
 
     // MARK: Field
 
-    /// The band Dig works in: right of the sidebar, left of the inspector.
     private var digBounds: (min: CGFloat, max: CGFloat) {
         (Metrics.inset + Metrics.sidebarWidth + 36, field.size.width - Metrics.inset - Metrics.inspectorWidth - 28)
     }
@@ -392,6 +389,7 @@ final class DigModel {
 
     func finish() {
         phase = .idle
+        hoveredVein = nil
         categories = []
         review = []
         clearNotes = []

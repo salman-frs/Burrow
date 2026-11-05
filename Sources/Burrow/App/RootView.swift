@@ -1,5 +1,4 @@
 import AppKit
-import BurrowCore
 import SwiftUI
 
 struct RootView: View {
@@ -165,7 +164,7 @@ private struct DiskGauge: View {
         .padding(.horizontal, 8)
         .padding(.top, 10)
         .padding(.bottom, 2)
-        .help("Macintosh HD")
+        .help(disk.name)
     }
 }
 

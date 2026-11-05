@@ -14,7 +14,6 @@ enum Metrics {
     static let heroTop: CGFloat = 34
 }
 
-/// One amber accent, the miner's lamp, on neutral glass. Everything else is the system's own text colours.
 enum Palette {
     static let amber = Color(light: 0xEC9300, dark: 0xFFB547)
     static let amberHot = Color(light: 0xF5AE2E, dark: 0xFFD592)
@@ -39,7 +38,6 @@ extension Color {
     }
 }
 
-/// Sizes the way the screens show them: whole gigabytes past 100 GB, one decimal below that.
 enum ByteText {
     static func parts(_ bytes: Int64) -> (value: String, unit: String) {
         let value = Double(max(bytes, 0))

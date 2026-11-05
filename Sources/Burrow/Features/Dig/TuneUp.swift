@@ -29,6 +29,10 @@ final class TuneUpModel {
         guard let runner = app?.runner, phase == .idle else { return }
         phase = .checking
         await job.run(["optimize", "--dry-run"], with: runner)
+        if Task.isCancelled {
+            phase = .idle
+            return
+        }
         if let error = job.failure {
             app?.notify("Tune up could not check this Mac. \(error.localizedDescription)", symbol: "exclamationmark.triangle.fill", warning: true)
             phase = .idle

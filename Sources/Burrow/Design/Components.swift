@@ -1,4 +1,5 @@
 import AppKit
+import BurrowCore
 import SwiftUI
 
 // MARK: Glass
@@ -54,7 +55,6 @@ private struct HoverHighlight: ViewModifier {
 
 // MARK: Buttons
 
-/// The one loud control on a screen: amber, with dark ink.
 struct AmberButtonStyle: ButtonStyle {
     var height: CGFloat = 40
 
@@ -93,7 +93,6 @@ private struct AmberButton: View {
     }
 }
 
-/// A quiet capsule that only shows itself on hover, or always when `filled`.
 struct QuietButtonStyle: ButtonStyle {
     var height: CGFloat = 40
     var filled = false
@@ -169,7 +168,6 @@ struct CheckCircle: View {
 
 // MARK: Figures
 
-/// A size as the screen's headline: the number, a smaller unit, and the word it is about.
 struct ByteFigure: View, Animatable {
     var bytes: Double
     var word: String?
@@ -232,7 +230,6 @@ struct Spinner: View {
     }
 }
 
-/// A short bar for a row's share of the largest row.
 struct ShareBar: View {
     let share: Double
     var muted = false
@@ -246,6 +243,78 @@ struct ShareBar: View {
                 .opacity(muted ? 0.4 : 1)
         }
         .frame(height: 3)
+    }
+}
+
+// MARK: Rows
+
+struct Chevron: View {
+    let expanded: Bool
+
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(.tertiary)
+            .rotationEffect(.degrees(expanded ? 90 : 0))
+            .frame(width: 22)
+    }
+}
+
+struct DisclosureRow<Content: View>: View {
+    let symbol: String
+    var tint: Color?
+    let title: String
+    var bytes: Int64?
+    @ViewBuilder let content: Content
+    @ViewState private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button { withAnimation(.spring(duration: 0.35, bounce: 0.2)) { expanded.toggle() } } label: {
+                HStack(spacing: 11) {
+                    Image(systemName: symbol)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(tint.map(AnyShapeStyle.init) ?? AnyShapeStyle(.tertiary))
+                        .frame(width: 20)
+                    Text(title).font(.system(size: 13.5, weight: .medium)).foregroundStyle(.secondary)
+                    Spacer()
+                    if let bytes {
+                        Text(ByteText.string(bytes)).font(.system(size: 13, weight: .semibold)).monospacedDigit()
+                    }
+                    Chevron(expanded: expanded)
+                }
+                .padding(.leading, 12)
+                .padding(.trailing, 10)
+                .frame(minHeight: 46)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if expanded {
+                content.transition(.opacity)
+            }
+        }
+        .hoverHighlight(expanded)
+    }
+}
+
+struct RevealRow: View {
+    let title: String
+    let path: String
+    let bytes: Int64
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(title).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+            Spacer(minLength: 6)
+            Text(ByteText.string(bytes)).monospacedDigit().foregroundStyle(.secondary)
+            Button { revealInFinder(path) } label: { Image(systemName: "arrow.up.forward.square") }
+                .buttonStyle(IconButtonStyle(size: 24))
+                .help("Show in Finder")
+                .accessibilityLabel("Show \(title) in Finder")
+        }
+        .font(.system(size: 12.5))
+        .frame(minHeight: 30)
+        .help(Paths.abbreviatingHome(path))
     }
 }
 
@@ -273,6 +342,13 @@ struct ToastView: View {
         .frame(minHeight: 38)
         .glass(Capsule(), strong: true)
     }
+}
+
+struct FieldHover: Equatable {
+    let location: CGPoint
+    let swatch: Color?
+    let title: String
+    let detail: String
 }
 
 struct FieldTooltip: View {

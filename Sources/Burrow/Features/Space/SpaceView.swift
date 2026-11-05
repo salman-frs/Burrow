@@ -95,7 +95,7 @@ private struct Crumbs: View {
                 if index > 0 {
                     Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold)).foregroundStyle(.tertiary)
                 }
-                Button(crumb.name) { model.go(to: index) }
+                Button(crumb.path == nil ? model.diskName : crumb.name) { model.go(to: index) }
                     .buttonStyle(CrumbStyle(current: index == model.trail.count - 1))
             }
             if model.loadingPath != nil {
@@ -296,53 +296,18 @@ private struct SpaceDetail: View {
 
 private struct LargeFilesRow: View {
     let files: [LargeFile]
-    @ViewState private var expanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button { withAnimation(.spring(duration: 0.35, bounce: 0.2)) { expanded.toggle() } } label: {
-                HStack(spacing: 11) {
-                    Image(systemName: "doc").font(.system(size: 14, weight: .medium)).foregroundStyle(.tertiary).frame(width: 20)
-                    Text("Large files").font(.system(size: 13.5, weight: .medium)).foregroundStyle(.secondary)
-                    Spacer()
-                    Text(ByteText.string(files.map(\.size).reduce(0, +))).font(.system(size: 13, weight: .semibold)).monospacedDigit()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.tertiary)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                        .frame(width: 22)
+        DisclosureRow(symbol: "doc", title: "Large files", bytes: files.map(\.size).reduce(0, +)) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(files.prefix(30)) { RevealRow(title: $0.name, path: $0.path, bytes: $0.size) }
                 }
-                .padding(.leading, 12)
-                .padding(.trailing, 10)
-                .frame(minHeight: 46)
-                .contentShape(Rectangle())
+                .padding(.leading, 43)
+                .padding(.trailing, 6)
             }
-            .buttonStyle(.plain)
-            if expanded {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(files.prefix(30)) { file in
-                            HStack(spacing: 10) {
-                                Text(file.name).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
-                                Spacer(minLength: 6)
-                                Text(ByteText.string(file.size)).monospacedDigit().foregroundStyle(.secondary)
-                                Button { revealInFinder(file.path) } label: { Image(systemName: "arrow.up.forward.square") }
-                                    .buttonStyle(IconButtonStyle(size: 24))
-                                    .help("Show in Finder")
-                            }
-                            .font(.system(size: 12.5))
-                            .frame(minHeight: 30)
-                            .help(Paths.abbreviatingHome(file.path))
-                        }
-                    }
-                    .padding(.leading, 43)
-                    .padding(.trailing, 6)
-                }
-                .frame(maxHeight: 220)
-                .scrollIndicators(.never)
-                .transition(.opacity)
-            }
+            .frame(maxHeight: 220)
+            .scrollIndicators(.never)
         }
-        .hoverHighlight(expanded)
     }
 }

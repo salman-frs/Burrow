@@ -15,7 +15,6 @@ public struct MoleReport: Sendable, Equatable {
         summary.first { $0.hasPrefix(label) }.flatMap { ByteSize.firstSize(in: $0) }
     }
 
-    /// Sections with at least one row Mole would clean.
     public var cleanableSections: [ReportSection] {
         sections.filter { section in section.rows.contains { $0.status == .pending } }
     }
@@ -36,7 +35,6 @@ public struct MoleReport: Sendable, Equatable {
         .sorted { $0.bytes > $1.bytes }
     }
 
-    /// How far a streamed `mo optimize` has got with one of its tasks.
     public func progress(of task: String, finished: Bool) -> TaskProgress {
         guard let index = sections.firstIndex(where: { $0.title == task }) else { return .pending }
         if index == sections.count - 1 && !finished { return .running }

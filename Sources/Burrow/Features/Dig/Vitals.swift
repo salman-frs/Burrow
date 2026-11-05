@@ -155,7 +155,6 @@ private struct Ring: View {
     }
 }
 
-/// What used to be a whole screen: the health score and what keeps the Mac busy.
 private struct HealthPopover: View {
     let snapshot: StatusSnapshot
 

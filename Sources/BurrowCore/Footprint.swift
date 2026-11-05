@@ -1,6 +1,5 @@
 import Foundation
 
-/// Where an app keeps a file it would leave behind, as the Apps screen groups them.
 public enum FootprintPart: Int, CaseIterable, Sendable {
     case app, data, caches, settings
 
@@ -20,7 +19,6 @@ public enum FootprintPart: Int, CaseIterable, Sendable {
 }
 
 public enum DirectorySize {
-    /// Space a file or folder takes on disk, counting each file's allocated blocks.
     public static func allocated(at url: URL) -> Int64 {
         let keys: Set<URLResourceKey> = [.totalFileAllocatedSizeKey, .isRegularFileKey, .isDirectoryKey]
         guard let values = try? url.resourceValues(forKeys: keys) else { return 0 }

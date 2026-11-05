@@ -71,7 +71,7 @@ final class AppsModel {
                 selectionChanged()
             }
         } catch {
-            failure = error.localizedDescription
+            if !Task.isCancelled { failure = error.localizedDescription }
         }
         loading = false
         await measure()
@@ -111,7 +111,6 @@ final class AppsModel {
         selectionChanged()
     }
 
-    /// Picks the apps dropped on the panel. Returns false when none of them is an app Mole can uninstall.
     func pick(droppedURLs urls: [URL]) -> Bool {
         guard !uninstalling else { return false }
         let paths = Set(urls.map { $0.standardizedFileURL.path })

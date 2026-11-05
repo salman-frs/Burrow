@@ -1,6 +1,5 @@
 import Foundation
 
-/// One band of the startup disk, from the deepest (what macOS manages) to the top (your home folder).
 public struct DiskLayer: Sendable, Equatable, Identifiable {
     public let name: String
     /// nil for the space macOS manages itself, which has no folder Burrow can open.

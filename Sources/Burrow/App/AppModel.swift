@@ -16,7 +16,6 @@ enum Section: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Dig draws its own shovel; the rest use SF Symbols.
     var symbol: String? {
         switch self {
         case .dig: nil
@@ -29,7 +28,7 @@ enum Section: String, CaseIterable, Identifiable {
 
 /// Work that changes files. Only one runs at a time, so two Mole commands never touch the same files.
 enum Change {
-    case dig, tuneUp, uninstall, touchID
+    case dig, tuneUp, uninstall
 }
 
 @MainActor
@@ -40,6 +39,7 @@ final class AppModel {
     private(set) var toast: Toast?
     private(set) var busy: Change?
     let runner: MoleRunner?
+    let moleVersion: String?
     let admin = AdminBroker()
 
     let disk: DiskModel
@@ -54,6 +54,7 @@ final class AppModel {
 
     init() {
         runner = MoleInstallation.locate().map(MoleRunner.init(installation:))
+        moleVersion = runner.flatMap { Self.version(of: $0.installation.executable) }
         disk = DiskModel()
         dig = DigModel()
         vitals = VitalsModel()
@@ -72,15 +73,12 @@ final class AppModel {
         settings.attach(to: self)
         guard let runner else { return }
         Task.detached(priority: .userInitiated) { runner.prepare() }
-        Task {
-            await disk.loadOverview()
-            await apps.load()
-        }
+        Task { await disk.loadOverview() }
+        Task { await apps.load() }
     }
 
-    var moleVersion: String? {
-        guard let executable = runner?.installation.executable,
-              let source = try? String(contentsOf: executable, encoding: .utf8),
+    private static func version(of executable: URL) -> String? {
+        guard let source = try? String(contentsOf: executable, encoding: .utf8),
               let line = source.split(separator: "\n").first(where: { $0.hasPrefix("VERSION=") })
         else { return nil }
         return line.dropFirst("VERSION=".count).trimmingCharacters(in: CharacterSet(charactersIn: "\""))
@@ -102,7 +100,6 @@ final class AppModel {
         log.markStale()
     }
 
-    /// Something on disk changed: refresh the free space now and the layers in the background.
     func diskChanged() {
         disk.refreshVolume()
         Task { await disk.loadOverview() }
@@ -154,10 +151,10 @@ final class AdminBroker {
     }
 }
 
-/// The startup disk: capacity and free space from the volume, and the layers Mole's overview measures.
 @MainActor
 @Observable
 final class DiskModel {
+    private(set) var name = "Macintosh HD"
     private(set) var total: Int64 = 0
     private(set) var free: Int64 = 0
     private(set) var overview: DiskReport?
@@ -173,8 +170,10 @@ final class DiskModel {
     var layers: [DiskLayer] { DiskLayers.make(overview: overview, used: used) }
 
     func refreshVolume() {
-        let keys: Set<URLResourceKey> = [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey]
+        let keys: Set<URLResourceKey> = [.volumeLocalizedNameKey, .volumeTotalCapacityKey,
+                                         .volumeAvailableCapacityForImportantUsageKey]
         guard let values = try? URL(fileURLWithPath: "/").resourceValues(forKeys: keys) else { return }
+        name = values.volumeLocalizedName ?? name
         total = Int64(values.volumeTotalCapacity ?? 0)
         free = values.volumeAvailableCapacityForImportantUsage ?? 0
     }

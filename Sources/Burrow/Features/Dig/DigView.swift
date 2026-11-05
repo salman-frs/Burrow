@@ -1,13 +1,6 @@
 import BurrowCore
 import SwiftUI
 
-struct FieldHover: Equatable {
-    let location: CGPoint
-    let swatch: Color?
-    let title: String
-    let detail: String
-}
-
 struct DigView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.colorScheme) private var scheme
@@ -102,18 +95,6 @@ struct DigView: View {
     }
 }
 
-/// Fades the field out behind the sidebar so the glass never sits on busy dots.
-struct FieldMask: View {
-    let width: CGFloat
-
-    var body: some View {
-        let start = width > 0 ? min(90 / width, 0.4) : 0
-        let end = width > 0 ? min(330 / width, 0.6) : 0
-        LinearGradient(stops: [.init(color: .clear, location: start), .init(color: .black, location: end)],
-                       startPoint: .leading, endPoint: .trailing)
-    }
-}
-
 private struct DigHero: View {
     let model: DigModel
     let free: Int64
@@ -150,7 +131,6 @@ private struct DigHero: View {
     }
 }
 
-/// Counts up from the free space before a clear to the free space after it.
 private struct CountingFigure: View {
     let from: Int64
     let to: Int64
@@ -232,7 +212,6 @@ private struct DigCapsule: View {
                         .contentTransition(.numericText(value: Double(model.selectedTotal)))
                 }
                 .buttonStyle(AmberButtonStyle())
-                .keyboardShortcut(.defaultAction)
                 .disabled(model.selectedTotal == 0 || !app.canStart(.dig))
             case .clearing:
                 Ticker(text: model.job.stopping ? "Stopping after this step" : model.ticker)
@@ -369,11 +348,7 @@ private struct CategoryRow: View {
                             .foregroundStyle(on ? .primary : .tertiary)
                             .contentTransition(.numericText(value: Double(model.picked(category))))
                         if !category.isPickable {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.tertiary)
-                                .rotationEffect(.degrees(expanded ? 90 : 0))
-                                .frame(width: 22)
+                            Chevron(expanded: expanded)
                         }
                     }
                     .contentShape(Rectangle())
@@ -468,100 +443,41 @@ private struct ItemRow: View {
 
 private struct ReviewRow: View {
     let items: [ReviewItem]
-    @ViewState private var expanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button { withAnimation(.spring(duration: 0.35, bounce: 0.2)) { expanded.toggle() } } label: {
-                HStack(spacing: 11) {
-                    Image(systemName: "eye").font(.system(size: 14, weight: .medium)).foregroundStyle(.tertiary).frame(width: 20)
-                    Text("Yours to check").font(.system(size: 13.5, weight: .medium)).foregroundStyle(.secondary)
-                    Spacer()
-                    Text(ByteText.string(items.map(\.bytes).reduce(0, +)))
-                        .font(.system(size: 13, weight: .semibold)).monospacedDigit()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.tertiary)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                        .frame(width: 22)
+        DisclosureRow(symbol: "eye", title: "Yours to check", bytes: items.map(\.bytes).reduce(0, +)) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(items) { RevealRow(title: $0.title, path: $0.path, bytes: $0.bytes) }
                 }
-                .padding(.leading, 12)
-                .padding(.trailing, 10)
-                .frame(minHeight: 46)
-                .contentShape(Rectangle())
+                .padding(.leading, 43)
+                .padding(.trailing, 6)
             }
-            .buttonStyle(.plain)
-            .help("Mole never clears these. Open them and decide yourself.")
-            if expanded {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(items) { item in
-                            HStack(spacing: 10) {
-                                Text(item.title).lineLimit(1).foregroundStyle(.secondary)
-                                Spacer(minLength: 6)
-                                Text(ByteText.string(item.bytes)).monospacedDigit().foregroundStyle(.secondary)
-                                Button { revealInFinder(item.path) } label: { Image(systemName: "arrow.up.forward.square") }
-                                    .buttonStyle(IconButtonStyle(size: 24))
-                                    .help("Show in Finder")
-                            }
-                            .font(.system(size: 12.5))
-                            .frame(minHeight: 30)
-                            .help(Paths.abbreviatingHome(item.path))
-                        }
-                    }
-                    .padding(.leading, 43)
-                    .padding(.trailing, 6)
-                }
-                .frame(maxHeight: 200)
-                .scrollIndicators(.never)
-                .transition(.opacity)
-            }
+            .frame(maxHeight: 200)
+            .scrollIndicators(.never)
         }
-        .hoverHighlight(expanded)
+        .help("Mole never clears these. Open them and decide yourself.")
     }
 }
 
 private struct NotesRow: View {
     let notes: [String]
-    @ViewState private var expanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button { withAnimation(.spring(duration: 0.35, bounce: 0.2)) { expanded.toggle() } } label: {
-                HStack(spacing: 11) {
-                    Image(systemName: "exclamationmark.circle").font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Palette.amberText).frame(width: 20)
-                    Text(notes.count == 1 ? "1 note from Mole" : "\(notes.count) notes from Mole")
-                        .font(.system(size: 13.5, weight: .medium)).foregroundStyle(.secondary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.tertiary)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                        .frame(width: 22)
-                }
-                .padding(.leading, 12)
-                .padding(.trailing, 10)
-                .frame(minHeight: 46)
-                .contentShape(Rectangle())
+        DisclosureRow(symbol: "exclamationmark.circle", tint: Palette.amberText,
+                      title: notes.count == 1 ? "1 note from Mole" : "\(notes.count) notes from Mole") {
+            ScrollView {
+                Text(notes.joined(separator: "\n"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 43)
+                    .padding(.trailing, 10)
+                    .padding(.bottom, 8)
             }
-            .buttonStyle(.plain)
-            if expanded {
-                ScrollView {
-                    Text(notes.joined(separator: "\n"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 43)
-                        .padding(.trailing, 10)
-                        .padding(.bottom, 8)
-                }
-                .frame(maxHeight: 180)
-                .transition(.opacity)
-            }
+            .frame(maxHeight: 180)
         }
-        .hoverHighlight(expanded)
     }
 }
 
@@ -582,7 +498,6 @@ extension DigCategory {
         }
     }
 
-    /// Mole's section titles describe where it looks; these describe what you get back.
     private static let cacheNames = [
         "User essentials": "Caches & logs",
         "App caches": "macOS caches",

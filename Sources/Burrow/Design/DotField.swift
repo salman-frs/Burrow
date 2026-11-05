@@ -26,7 +26,6 @@ struct RGB: Equatable {
     }
 }
 
-/// The earth palette the fields are drawn in: blue rock at depth rising to sand, graphite to stone in light mode.
 struct FieldTheme {
     let ramp: [RGB]
     let air: RGB
@@ -118,7 +117,6 @@ struct Particle {
     let phase: Double
 }
 
-/// The path the digger's lamp follows: a dive into the top layer, then back-and-forth passes through it.
 struct DiggerPath {
     let points: [CGPoint]
     let lengths: [CGFloat]
@@ -190,8 +188,7 @@ enum Moment {
     static var now: Double { Date.now.timeIntervalSinceReferenceDate }
 }
 
-/// A disk drawn as a cross-section of dots: free space is the air on top, the deepest layer sits at the bottom,
-/// and each dot stands for the same number of bytes. Mutations happen in event handlers; drawing only reads.
+/// Drawing runs every frame and must only read; all mutation happens in event handlers.
 @MainActor
 @Observable
 final class DotField {
@@ -386,8 +383,6 @@ final class DotField {
             self.revision += 1
         }
     }
-
-    func invalidate() { revision += 1 }
 
     // MARK: Digging
 
@@ -779,7 +774,6 @@ final class DotField {
     }
 }
 
-/// Draws a field and reports its size and hover position. The air layer only redraws on resize or theme change.
 struct DotFieldView: View {
     let field: DotField
     var focus = DotField.Focus()
@@ -818,5 +812,16 @@ struct DotFieldView: View {
             case .ended: onHover?(nil)
             }
         }
+    }
+}
+
+struct FieldMask: View {
+    let width: CGFloat
+
+    var body: some View {
+        let start = width > 0 ? min(90 / width, 0.4) : 0
+        let end = width > 0 ? min(330 / width, 0.6) : 0
+        LinearGradient(stops: [.init(color: .clear, location: start), .init(color: .black, location: end)],
+                       startPoint: .leading, endPoint: .trailing)
     }
 }

@@ -37,14 +37,14 @@ final class LogModel {
             stale = false
             failure = nil
         } catch {
+            if Task.isCancelled { return }
             failure = error.localizedDescription
         }
         loaded = true
     }
 
-    /// Runs that changed something, newest first, each with the files Mole logged while it ran.
     static func entries(from report: HistoryReport) -> [LogEntry] {
-        let deletions = report.deletions.map { ($0, sessionFormatter.date(from: $0.timestamp) ?? isoFormatter.date(from: $0.timestamp)) }
+        let deletions = report.deletions.map { ($0, isoFormatter.date(from: $0.timestamp)) }
         return report.sessions
             .filter { !$0.isPreview && $0.operationCount > 0 }
             .map { session in
@@ -254,7 +254,6 @@ private struct LogRow: View {
     }
 }
 
-/// One dot per 100 MB, so a month of clearing reads at a glance.
 private struct Pellets: View {
     let count: Int
     let partial: Bool

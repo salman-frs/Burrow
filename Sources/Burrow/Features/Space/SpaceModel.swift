@@ -24,7 +24,7 @@ final class SpaceModel {
         let path: String?
     }
 
-    private(set) var trail = [Crumb(name: "Macintosh HD", path: nil)]
+    private(set) var trail = [Crumb(name: "", path: nil)]
     private(set) var reports: [String: DiskReport] = [:]
     private(set) var loadingPath: String?
     var selectedID: String?
@@ -35,6 +35,7 @@ final class SpaceModel {
     func attach(to app: AppModel) { self.app = app }
 
     var current: Crumb { trail[trail.count - 1] }
+    var diskName: String { app?.disk.name ?? "" }
     var atRoot: Bool { current.path == nil }
     var report: DiskReport? { current.path.flatMap { reports[$0] } }
 
