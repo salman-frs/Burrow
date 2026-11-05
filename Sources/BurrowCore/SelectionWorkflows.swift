@@ -13,6 +13,7 @@ public struct InstallerFile: Sendable, Equatable, Identifiable, Hashable {
 public struct RemovalOutcome: Sendable, Equatable {
     public let exitCode: Int32
     public let summary: [String]
+    public let notices: [String]
     public let transcript: String
 
     public var succeeded: Bool { exitCode == 0 }
@@ -37,7 +38,8 @@ extension MoleSession {
         }
         let code = try await exitCode()
         let screen = screen()
-        return RemovalOutcome(exitCode: code, summary: Rows.summary(in: screen), transcript: screen)
+        return RemovalOutcome(exitCode: code, summary: Rows.summary(in: screen),
+                              notices: Rows.notices(in: screen), transcript: screen)
     }
 
     /// Runs the steps before Mole's confirmation. Nothing has been removed while they run, so a
@@ -61,12 +63,43 @@ enum Rows {
     }
 
     static func summary(in screen: String) -> [String] {
-        let lines = screen.components(separatedBy: CharacterSet(charactersIn: "\r\n"))
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-        guard let last = lines.lastIndex(where: { $0.hasPrefix("=====") }),
-              let first = lines[..<last].lastIndex(where: { $0.hasPrefix("=====") })
-        else { return [] }
+        let lines = screenLines(screen).map { $0.trimmingCharacters(in: .whitespaces) }
+        guard let (first, last) = summaryRules(in: lines) else { return [] }
         return lines[(first + 1)..<last].filter { !$0.isEmpty }
+    }
+
+    /// Mole's `◎` lines before the summary say what it kept or skipped; one that ends in `:`
+    /// lists the affected paths on the indented lines after it.
+    static func notices(in screen: String) -> [String] {
+        let lines = screenLines(screen)
+        let end = summaryRules(in: lines.map { $0.trimmingCharacters(in: .whitespaces) })?.first ?? lines.endIndex
+        var notices: [String] = []
+        var listing = false
+        for line in lines[..<end] {
+            let text = line.trimmingCharacters(in: .whitespaces)
+            guard !text.isEmpty else { continue }
+            if text.hasPrefix("◎") {
+                let notice = text.dropFirst().trimmingCharacters(in: .whitespaces)
+                listing = notice.hasSuffix(":")
+                if !notices.contains(notice) { notices.append(notice) }
+            } else if listing, line.hasPrefix("  ") {
+                notices.append(text)
+            } else {
+                listing = false
+            }
+        }
+        return notices
+    }
+
+    private static func screenLines(_ screen: String) -> [String] {
+        screen.components(separatedBy: CharacterSet(charactersIn: "\r\n"))
+    }
+
+    private static func summaryRules(in trimmedLines: [String]) -> (first: Int, last: Int)? {
+        guard let last = trimmedLines.lastIndex(where: { $0.hasPrefix("=====") }),
+              let first = trimmedLines[..<last].lastIndex(where: { $0.hasPrefix("=====") })
+        else { return nil }
+        return (first, last)
     }
 
     static func confirmationList(in screen: String, heading: String) -> [String]? {
@@ -185,7 +218,8 @@ public enum PurgeWorkflow {
     static let menuTitle = "Select Artifacts to Purge"
 
     public static func scan(with runner: MoleRunner) async throws -> (artifacts: [PathEntry], report: MoleReport) {
-        let result = try await runner.capture(["purge", "--dry-run"])
+        // Mole reports the artifacts it could not inspect on stderr.
+        let result = try await runner.capture(["purge", "--dry-run"], separateErrors: false)
         let text = String(decoding: result.output, as: UTF8.self)
         return (PurgePreviewParser.parse(text), MoleReportParser.parse(text))
     }
