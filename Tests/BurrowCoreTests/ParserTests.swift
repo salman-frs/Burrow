@@ -168,6 +168,36 @@ private func fixtureData(_ name: String) throws -> Data {
         #expect(PurgeWorkflow.confirmationMatches(screen, selection: selection))
     }
 
+    @Test func incompletePurgeNamesWhatMoleKept() {
+        let screen = """
+            ◎ Could not inspect ~/Library/CloudStorage/Drive/app/.venv; kept\r
+            ◎ Skipped 2 project scan roots because scanning did not complete:
+              ~/code/big (status 124)
+              ~/work/huge (status 124)
+            Re-run with 'mo purge --debug' to inspect the scan failure.
+            Selected paths:
+              ~/code/a/node_modules
+            ◎ Could not inspect ~/Library/CloudStorage/Drive/app/.venv; kept
+            ======================================================================
+            Purge incomplete
+            ◎ 1 more failed
+            ======================================================================
+            """
+        #expect(Rows.notices(in: screen) == [
+            "Could not inspect ~/Library/CloudStorage/Drive/app/.venv; kept",
+            "Skipped 2 project scan roots because scanning did not complete:",
+            "~/code/big (status 124)",
+            "~/work/huge (status 124)",
+        ])
+        #expect(Rows.summary(in: screen) == ["Purge incomplete", "◎ 1 more failed"])
+    }
+
+    @Test func purgePreviewKeepsMolesUninspectedNote() {
+        let report = MoleReportParser.parse("◎ Could not inspect ~/code/app/.venv; kept\n✓ [DRY RUN] ~/code/a/node_modules, 1.0MB\n")
+        let attention = report.notices.filter { $0.status == .attention }.map(\.title)
+        #expect(attention == ["Could not inspect ~/code/app/.venv; kept"])
+    }
+
     @Test func slimTerminalScriptQuotesTheEnginePath() {
         let script = SlimWorkflow.terminalScript(moleExecutable: URL(fileURLWithPath: "/Applications/Bur'row.app/mole"))
         #expect(script.contains("exec '/Applications/Bur'\\''row.app/mole' slim"))

@@ -124,7 +124,7 @@ private struct SelectionScreen<Item: Identifiable & Hashable & Sendable, Row: Vi
             if let outcome = model.outcome {
                 OutcomeBanner(tone: outcome.succeeded ? .success : .warning,
                               title: outcome.summary.first ?? "Finished",
-                              lines: Array(outcome.summary.dropFirst()),
+                              lines: Array(outcome.summary.dropFirst()) + (outcome.succeeded ? [] : outcome.notices),
                               onDismiss: model.dismissOutcome)
                     .padding(.horizontal, 28).padding(.bottom, 12)
             }

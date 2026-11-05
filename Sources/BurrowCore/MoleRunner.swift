@@ -107,8 +107,8 @@ public final class MoleRunner: Sendable {
         }
     }
 
-    public func capture(_ arguments: [String]) async throws -> (output: Data, exitCode: Int32) {
-        let session = try start(arguments, options: SessionOptions(separateErrors: true))
+    public func capture(_ arguments: [String], separateErrors: Bool = true) async throws -> (output: Data, exitCode: Int32) {
+        let session = try start(arguments, options: SessionOptions(separateErrors: separateErrors))
         let code = try await withTaskCancellationHandler {
             try await session.exitCode()
         } onCancel: {
