@@ -1,0 +1,24 @@
+○ DRY RUN MODE, No project artifacts will be removed
+
+Purge Project Artifacts
+◎ Could not inspect ~/Library/CloudStorage/iCloudDrive/Documents/notes/.venv; kept
+
+✓ [DRY RUN] ~/Projects/web-app/node_modules, 412.8MB
+✓ [DRY RUN] ~/Projects/web-app/.next, 206.1MB
+✓ [DRY RUN] ~/Projects/api-server/target, 508.3MB
+✓ [DRY RUN] ~/Projects/telegram-bot/.venv, 193.3MB
+✓ [DRY RUN] ~/Projects/telegram-bot/.mypy_cache, 52.4MB
+✓ [DRY RUN] ~/Projects/telegram-bot/tests/__pycache__, 332KB
+✓ [DRY RUN] ~/Projects/telegram-bot/.pytest_cache, 41KB
+✓ [DRY RUN] ~/Projects/android-app/app/build, 25.4MB
+✓ [DRY RUN] ~/Projects/android-app/.gradle, 3.2MB
+✓ [DRY RUN] ~/Code/cli-tool/dist, 23.3MB
+✓ [DRY RUN] ~/Code/cli-tool/.venv-docs, 104.6MB
+✓ [DRY RUN] ~/Code/scratch/__pycache__, 12KB
+
+
+======================================================================
+Dry run incomplete - no changes made
+Would free approximately: 1.53GB | Items: 12 | Free: 48.66GB
+Some artifacts were skipped or could not be processed.
+======================================================================

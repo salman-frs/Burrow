@@ -1,0 +1,8 @@
+[
+  {"name": "Google Chrome", "bundle_id": "com.google.Chrome", "source": "App", "uninstall_name": "Google Chrome", "path": "/Applications/Google Chrome.app", "size": "--"},
+  {"name": "Code", "bundle_id": "com.microsoft.VSCode", "source": "Homebrew", "uninstall_name": "visual-studio-code", "path": "/Applications/Visual Studio Code.app", "size": "--"},
+  {"name": "Helium", "bundle_id": "net.imput.helium", "source": "App", "uninstall_name": "Helium", "path": "/Applications/Helium.app", "size": "--"},
+  {"name": "Slack", "bundle_id": "com.tinyspeck.slackmacgap", "source": "Homebrew", "uninstall_name": "slack", "path": "/Applications/Slack.app", "size": "--"},
+  {"name": "Docker", "bundle_id": "com.docker.docker", "source": "Homebrew", "uninstall_name": "docker-desktop", "path": "/Applications/Docker.app", "size": "--"},
+  {"name": "Rectangle", "bundle_id": "com.knollsoft.Rectangle", "source": "App", "uninstall_name": "Rectangle", "path": "/Users/alex/Applications/Rectangle.app", "size": "--"}
+]

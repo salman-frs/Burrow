@@ -1,0 +1,63 @@
+{
+  "logs": {
+    "operations": "/Users/alex/Library/Logs/mole/operations.log",
+    "deletions": "/Users/alex/Library/Logs/mole/deletions.log"
+  },
+  "limit": 5,
+  "sessions": [
+    {
+      "command": "clean",
+      "run_id": "1793880000-4242",
+      "attribution": "run",
+      "started_at": "2026-11-05 19:47:40",
+      "ended_at": "2026-11-05 19:49:02",
+      "items": 214,
+      "size": "2.31GB",
+      "operation_count": 18,
+      "failed_tasks": 0,
+      "actions": {
+        "removed": 16,
+        "trashed": 0,
+        "skipped": 2,
+        "failed": 0,
+        "rebuilt": 0,
+        "other": 0
+      }
+    },
+    {
+      "command": "clean-dry-run",
+      "run_id": "1793879900-4199",
+      "attribution": "run",
+      "started_at": "2026-11-05 19:45:10",
+      "ended_at": "2026-11-05 19:46:30",
+      "items": 0,
+      "size": "0B",
+      "operation_count": 0,
+      "failed_tasks": 0,
+      "actions": {
+        "removed": 0,
+        "trashed": 0,
+        "skipped": 0,
+        "failed": 0,
+        "rebuilt": 0,
+        "other": 0
+      }
+    }
+  ],
+  "deletions": [
+    {
+      "timestamp": "2026-11-05T19:48:12+07:00",
+      "mode": "trash",
+      "status": "ok",
+      "size_kb": 84321,
+      "path": "/Users/alex/Downloads/Zoom.pkg"
+    },
+    {
+      "timestamp": "2026-11-05T19:48:10+07:00",
+      "mode": "permanent",
+      "status": "ok",
+      "size_kb": null,
+      "path": "/Users/alex/Library/Caches/Homebrew"
+    }
+  ]
+}

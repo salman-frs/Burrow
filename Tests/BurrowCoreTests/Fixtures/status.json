@@ -1,0 +1,190 @@
+{
+  "collected_at": "2026-11-05T19:51:19.71979+07:00",
+  "host": "Mac.local",
+  "platform": "darwin 27.2",
+  "uptime": "2d 1h",
+  "uptime_seconds": 178057,
+  "procs": 578,
+  "hardware": {
+    "model": "MacBook Air",
+    "cpu_model": "Apple M1",
+    "total_ram": "8.0 GB",
+    "disk_size": "228.3 GB",
+    "os_version": "macOS 27.2",
+    "refresh_rate": ""
+  },
+  "health_score": 67,
+  "health_score_msg": "Good: High CPU",
+  "cpu": {
+    "usage": 89.85392105282367,
+    "per_core": [
+      79.07993813511814,
+      88.96493040020985,
+      90.90909091360079,
+      88.96493040020985,
+      88.96493040380598,
+      90.90909090157442,
+      91.66666667070886,
+      98.84992266709962
+    ],
+    "per_core_estimated": false,
+    "load1": 1.8955078125,
+    "load5": 1.93408203125,
+    "load15": 2.3505859375,
+    "core_count": 8,
+    "logical_cpu": 8,
+    "p_core_count": 4,
+    "e_core_count": 4
+  },
+  "gpu": [
+    {
+      "name": "kHW_AppleM1Item",
+      "usage": -1,
+      "memory_used": 0,
+      "memory_total": 0,
+      "core_count": 7,
+      "note": "sppci_vendor_Apple"
+    }
+  ],
+  "memory": {
+    "used": 7113670656,
+    "total": 8589934592,
+    "available": 1476263936,
+    "used_percent": 82.81402587890625,
+    "swap_used": 2542338048,
+    "swap_total": 3221225472,
+    "cached": 1051377664,
+    "pressure": ""
+  },
+  "disks": [
+    {
+      "mount": "/",
+      "device": "/dev/disk3s1s1",
+      "used": 196548050944,
+      "total": 245107195904,
+      "used_percent": 80.18860899578854,
+      "fstype": "apfs",
+      "external": false,
+      "smart_status": "verified"
+    }
+  ],
+  "trash_size": 0,
+  "trash_approx": false,
+  "disk_io": {
+    "read_rate": 0,
+    "write_rate": 0
+  },
+  "network": [
+    {
+      "name": "en0",
+      "rx_rate_mbs": 0.0133,
+      "tx_rate_mbs": 0.001,
+      "ip": "192.0.2.10"
+    },
+    {
+      "name": "en1",
+      "rx_rate_mbs": 0,
+      "tx_rate_mbs": 0,
+      "ip": ""
+    }
+  ],
+  "network_history": {
+    "rx_history": [
+      0.0133
+    ],
+    "tx_history": [
+      0.001
+    ]
+  },
+  "proxy": {
+    "enabled": false,
+    "type": "",
+    "host": ""
+  },
+  "batteries": [
+    {
+      "percent": 95,
+      "status": "charging",
+      "time_left": "0:23",
+      "health": "Good",
+      "cycle_count": 497,
+      "capacity": 82
+    }
+  ],
+  "thermal": {
+    "cpu_temp": 0,
+    "gpu_temp": 0,
+    "battery_temp": 38.19,
+    "fan_speed": 0,
+    "fan_count": 0,
+    "system_power": 19.783,
+    "adapter_power": 65,
+    "battery_power": 10.877
+  },
+  "sensors": null,
+  "bluetooth": [
+    {
+      "name": "No devices",
+      "connected": false,
+      "battery": ""
+    }
+  ],
+  "top_processes": [
+    {
+      "pid": 400,
+      "ppid": 1,
+      "name": "WindowServer",
+      "command": "WindowServer",
+      "cpu": 39.4,
+      "memory": 0.4,
+      "memory_bytes": 37289984
+    },
+    {
+      "pid": 501,
+      "ppid": 1,
+      "name": "Safari",
+      "command": "Safari",
+      "cpu": 24.6,
+      "memory": 4.4,
+      "memory_bytes": 377077760
+    },
+    {
+      "pid": 602,
+      "ppid": 1,
+      "name": "Xcode",
+      "command": "Xcode",
+      "cpu": 24.6,
+      "memory": 0.1,
+      "memory_bytes": 10043392
+    },
+    {
+      "pid": 703,
+      "ppid": 1,
+      "name": "Google Chrome Helper (Renderer)",
+      "command": "Google Chrome Helper (Renderer)",
+      "cpu": 21.8,
+      "memory": 6.2,
+      "memory_bytes": 530415616
+    },
+    {
+      "pid": 804,
+      "ppid": 1,
+      "name": "Finder",
+      "command": "Finder",
+      "cpu": 15.8,
+      "memory": 0.6,
+      "memory_bytes": 48775168
+    }
+  ],
+  "process_collected_at": "2026-11-05T19:51:19.71979+07:00",
+  "process_stale": false,
+  "zombie_count": 0,
+  "zombie_parents": [],
+  "zombie_parents_complete": true,
+  "process_watch": {
+    "enabled": true,
+    "cpu_threshold": 100,
+    "window": "5m0s"
+  },
+  "process_alerts": []
+}

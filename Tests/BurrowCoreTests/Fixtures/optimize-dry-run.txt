@@ -1,0 +1,77 @@
+
+Optimize
+○ DRY RUN MODE, No files will be modified
+
+⚙ System  6/8 GB RAM | 157/228 GB Disk | Uptime 2d
+
+Performance diagnosis
+  ◎ Memory pressure: swap 2.54GB of 3.22GB used (78%), 33% free
+    Safari Web Content          463.5MB
+    Xcode                       340.3MB
+
+➤ Finder Cache Refresh
+  ○ QuickLook thumbnails refreshed
+  ○ Icon services cache rebuilt
+
+➤ App State Cleanup
+  ○ App saved states optimized
+
+➤ Broken Config Repair
+  ○ All preference files valid
+
+➤ Network Cache Refresh
+  ○ DNS cache refreshed
+
+➤ Database Optimization
+  ○ Optimized 1 databases for Mail, Safari, Messages
+  ○ Already optimal for 1 databases
+
+➤ Prevent Finder .DS_Store
+  ○ .DS_Store prevention enabled on network & USB volumes
+
+➤ Legacy Overrides
+  ○ No legacy App Nap or disk-image overrides found
+
+➤ Network Stack Refresh
+  ○ Network stack already optimal
+
+➤ Permission Repair
+  ○ User directory permissions already optimal
+
+➤ Spotlight Optimization
+  ○ Spotlight indexing is disabled
+
+➤ Spotlight Orphan Rules
+  ○ Spotlight search rules already clean
+
+➤ Periodic Maintenance
+  ○ Periodic maintenance skipped (not available on this macOS version)
+
+➤ Shared File Lists
+  ○ Shared file lists all healthy
+
+➤ Disk Health
+  ○ Disk verify skipped
+
+➤ Login Items
+  ○ Login items audit · skipped in test mode
+
+➤ Quarantine Database Cleanup
+  ○ Quarantine database already clean
+
+➤ Launch Agents Cleanup
+  ○ Launch Agents all healthy
+
+➤ Notifications
+  ○ Notification Center database is healthy (1.1MB)
+
+➤ Usage Data
+  ○ Knowledge database is healthy (14.1MB)
+
+======================================================================
+Dry Run Complete, No Changes Made
+Would apply 4 optimizations
+11 unchanged | 3 skipped | 1 unavailable
+Run without --dry-run to apply these changes
+======================================================================
+

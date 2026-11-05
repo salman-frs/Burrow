@@ -1,0 +1,154 @@
+
+Clean Your Mac
+
+Dry Run Mode, Preview only, no deletions
+
+◎ System caches need sudo, run sudo -v && mo clean --dry-run for full preview
+
+⚙ Apple Silicon | Free space: 48.56GB
+⚙ Whitelist: 22 core patterns active
+
+➤ User essentials
+  ○ User app cache · 26 items, 2.19GB dry
+  ○ User app logs · 43 items, 24.0MB dry
+
+➤ App caches
+  ○ Siri suggestions cache · 9 items, 524KB dry
+  ○ Geod temp files · 1699 items, 156.4MB dry
+  ○ macOS Help system cache · 5 items, 24.8MB dry
+  ○ Maps geo tile cache · 8 items, 67.6MB dry
+  ○ Apple Media Services cache · 6 items, 4.6MB dry
+  ○ Parsecd cache · 15 items, 17.0MB dry
+  ○ Group Containers logs/caches · 42.5MB dry
+  ○ Handoff clipboard cache · 0B dry
+
+➤ Browsers
+  ○ Chrome GPU cache · 5 items, 5.8MB dry
+  ○ Chrome component CRX cache · 18 items, 60.6MB dry
+  ○ Chrome shader cache · 5 items, 561KB dry
+  ○ Chrome GR shader cache · 5 items, 561KB dry
+  ○ Chrome Dawn cache · 49 items, 8.3MB dry
+  ○ Chrome crash reports · 9.8MB dry
+  ○ Chrome optimization guide models · 10 items, 50.9MB dry
+  ○ Chrome Service Worker, would clean 115.1MB, 0 protected
+  ○ Puppeteer browser cache · 2 items, 376.8MB dry
+  ○ Helium GPU cache · 16 items, 17.5MB dry
+  ○ Helium component cache · 2 items, 4.2MB dry
+  ○ Helium extensions cache · 4KB dry
+  ○ Helium Dawn cache · 62 items, 13.1MB dry
+
+➤ Cloud & Office
+  ✓ Nothing to clean
+
+➤ Developer tools
+  ○ npm cache · would clean
+  ○ npm cache directory · 3 items, 1.24GB dry
+  ○ npm logs · 17 items, 283KB dry
+  ○ npm prebuilds · 5 items, 3.9MB dry
+  ○ pnpm cache · would clean
+  ○ pnpm metadata cache · 1.9MB dry
+  ○ Corepack cache · would clean
+  ○ pip cache · would clean
+  ○ uv cache · would clean
+  ○ Go module cache · would clean
+  ○ Go build cache · would clean
+  ○ mise cache · would clean
+  ○ Rust cargo cache · 58.4MB dry
+  ○ Ruby Bundler cache · 27.3MB dry
+  ⊙ Docker unused data · review with docker system df -v
+  ⊙ Docker Desktop data · 16.04GB · review with docker system df -v
+  ○ GitHub CLI cache · would clean
+  ○ Kubernetes cache · 2 items, 85.4MB dry
+  ○ Google Cloud logs · 27 items, 244.0MB dry
+  ○ Oh My Zsh cache · 6 items, 20KB dry
+  ○ pre-commit cache · 5 items, 15.7MB dry
+  ○ Python bytecode cache · Projects · 1 dir, 12KB dry
+  ○ Python bytecode cache · android-app · 5 dirs, 2.3MB dry
+  ○ Python bytecode cache · telegram-bot · 14 dirs, 844KB dry
+  ○ Python bytecode cache · menubar-app · 1 dir, 4KB dry
+  ○ Next.js build cache · 51.9MB dry
+  ○ Python bytecode cache · server · 2 dirs, 205KB dry
+  ○ Python bytecode cache · data-tools · 5 dirs, 328KB dry
+  ○ Python bytecode cache · repo · 1 dir, 25KB dry
+  ○ Python bytecode cache · src · 5 dirs, 328KB dry
+  ○ Android SDK cache · 82 items, 7.0MB dry
+  ○ Clang module cache · 906.1MB dry
+  ○ Sentry crash reports · 4 items, 16KB dry
+  ○ Prisma cache · 21.6MB dry
+  ○ OpenCode cache · 2 items, 6.0MB dry
+  ○ Codex CLI runtimes · 25.7MB dry
+  ○ Codex CLI runtimes · 337.1MB dry
+  ⊙ Codex runtimes · manual review
+  ◎ Codex crash reports · skipped (open-file check unavailable)
+  ◎ Simulator caches · skipped (process state unknown)
+  ○ Xcode cache · 582KB dry
+  ○ VS Code logs · 10 items, 8.2MB dry
+  ○ VS Code cache · 2 items, 15.7MB dry
+  ○ VS Code extension cache · 20 items, 434.2MB dry
+  ○ VS Code data cache · 15 items, 244.1MB dry
+  ○ VS Code webview cache · 38 items, 826.2MB dry
+  ○ Zed logs · 2 items, 4KB dry
+  ○ Homebrew cache · 4 items, 11.0MB dry
+  ○ Homebrew cleanup · would free 181.4MB
+    cairo 1.18.4 · 4.7MB
+    fontconfig 2.18.1 · 1.8MB
+    glib 2.88.2 · 39.9MB
+    libpng 1.6.58 · 1.4MB
+    little-cms2 2.19 · 1.5MB
+    pcre2 10.47_1 · 7.3MB
+    xorgproto 2025.1 · 4.1MB
+    ~/Library/Caches/Homebrew/bootsnap/d643bfa061b34d2638ecbdbc8018f88ea8423f686460396aa2c28f155589680f · 11.4MB
+    /opt/homebrew/var/homebrew/tmp/.cellar/freetype · 2.9MB
+    /opt/homebrew/var/homebrew/tmp/.cellar/xz · 2.7MB
+    /opt/homebrew/Library/Homebrew/vendor/portable-ruby/4.0.6 · 34.6MB
+    /opt/homebrew/Library/Homebrew/vendor/portable-ruby/4.0.7 · 34.6MB
+    /opt/homebrew/Library/Homebrew/vendor/portable-ruby/4.0.7_1 · 34.6MB
+
+➤ Apps & utilities
+  ○ Slack Service Worker, would clean 600.5MB, 0 protected
+  ○ Slack Service Worker, would clean 740.6MB, 0 protected
+  ○ Claude logs · 15 items, 29KB dry
+  ○ Steam app cache · 3 items, 750KB dry
+  ○ Steam depot cache · 3 items, 250KB dry
+  ○ Steam logs · 12 items, 111KB dry
+  ○ Zsh completion cache · 6 items, 365KB dry
+  ○ wget HSTS cache · 4KB dry
+  ○ Ghostty cache · 4KB dry
+
+➤ Virtualization
+  ✓ Nothing to clean
+
+➤ Application Support
+  ○ Application Support logs/caches · at least 705.6MB dry
+
+➤ App leftovers
+  ✓ Nothing to clean
+
+➤ Apple Silicon updates
+  ✓ Nothing to clean
+
+➤ Device backups & firmware
+  ✓ Nothing to clean
+
+➤ Time Machine
+  ✓ Nothing to clean
+
+➤ Large files
+  ⊙ Docker data · 16.04GB · ~/Library/Containers/com.docker.docker/Data
+  ⊙ Maven local repository · 1.09GB · ~/.m2/repository
+  ⊙ NuGet packages · 1.52GB · ~/.nuget/packages
+  ⊙ pnpm store · 1.38GB · v3, v10 and v11 stores · ~/Library/pnpm/store
+  ⊙ Gradle caches · 2.79GB · ~/.gradle/caches
+  ⊙ Android emulators · 1.48GB · 2026-09-07 · ~/.android/avd
+  ⊙ AI agent worktrees · 3.80GB · web-app · ~/Projects/web-app/.claude/worktrees
+
+➤ Project artifacts
+  ⊙ Build artifacts · 23+ dirs, 1.62GB+ · mo purge
+
+
+======================================================================
+Dry run complete - no changes made
+Potential space: 9.47GB+ · 2711 items
+Detailed file list: /Users/alex/.config/mole/clean-list.txt
+======================================================================
+

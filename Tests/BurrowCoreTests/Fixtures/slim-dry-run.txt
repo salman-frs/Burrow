@@ -1,0 +1,20 @@
+○ DRY RUN MODE, No apps will be changed
+
+  Google Chrome              405.7MB
+  Visual Studio Code         353.5MB
+  Docker                      61.3MB
+  Slack                       44.5MB
+  Spotify                     10.1MB
+  Firefox                      5.6MB
+  Steam                        4.9MB
+  Discord                      1.2MB
+  Zoom                         1.1MB
+  Rectangle                    1.1MB
+  Brave Browser                788KB
+  Microsoft Remote Desktop     552KB
+  Raycast                      355KB
+  ChatGPT                      350KB
+  Ghostty                      347KB
+  VLC                          317KB
+
+16 apps, 891.8MB of Intel code

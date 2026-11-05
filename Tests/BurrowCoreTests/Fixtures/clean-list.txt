@@ -1,0 +1,43 @@
+# Mole Cleanup Preview - 2026-11-05 19:53:08
+#
+# How to protect files:
+# 1. Run mo clean --whitelist and press Enter to save your selections
+# 2. Append paths below to ~/.config/mole/whitelist, one per line
+# A saved file replaces optional defaults; built-in safety protections still apply.
+#
+# Example:
+#   /Users/*/Library/Caches/com.example.app
+#
+
+
+=== User essentials ===
+/Users/alex/Library/Caches/Homebrew  # 83.3MB
+/Users/alex/Library/Caches/GeoServices  # 67.6MB
+/Users/alex/Library/Caches/go-build  # 1.53GB
+/Users/alex/Library/Caches/pip  # 8.3MB
+/Users/alex/Library/Caches/com.spotify.client  # 412.0MB
+/Users/alex/Library/Logs/DiagnosticReports  # 4.1MB
+
+=== App caches ===
+/Users/alex/Library/Caches/com.apple.helpd  # 24.8MB
+/Users/alex/Library/Caches/com.apple.parsecd  # 17.0MB
+/Users/alex/Library/Caches/com.apple.amsengagementd  # 4.6MB
+
+=== Browsers ===
+/Users/alex/Library/Application Support/Google/Chrome/Default/GPUCache  # 5.8MB
+/Users/alex/Library/Application Support/Google/Chrome/component_crx_cache  # 60.6MB
+/Users/alex/Library/Caches/ms-playwright-go  # 376.8MB, 2 items
+
+=== Developer tools ===
+/Users/alex/.npm/_cacache  # 1.24GB, 3 items
+/Users/alex/.npm/_logs  # 283KB, 17 items
+/Users/alex/.cargo/registry/cache  # 58.4MB
+/Users/alex/Library/Developer/Xcode/DerivedData/ModuleCache.noindex  # 906.1MB
+
+=== Apps & utilities ===
+/Users/alex/Library/Application Support/Slack/Service Worker/CacheStorage  # 600.5MB
+/Users/alex/Library/Caches/com.valvesoftware.steam  # 750KB, 3 items
+
+=== Application Support ===
+/Users/alex/Library/Application Support/Code/CachedData  # 244.1MB
+/Users/alex/Library/Application Support/Code/logs  # 8.2MB, counted under ~/Library/Application Support/Code

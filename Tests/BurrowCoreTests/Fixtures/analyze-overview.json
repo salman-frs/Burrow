@@ -1,0 +1,102 @@
+{
+  "scan_status": "partial",
+  "path": "/",
+  "overview": true,
+  "entries": [
+    {
+      "scan_status": "complete",
+      "name": "Home",
+      "path": "/Users/alex",
+      "size": 75222768874,
+      "is_dir": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "User Library",
+      "path": "/Users/alex/Library",
+      "size": 43610128384,
+      "is_dir": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "Applications",
+      "path": "/Applications",
+      "size": 19016282112,
+      "is_dir": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "Docker Data",
+      "path": "/Users/alex/Library/Containers/com.docker.docker/Data",
+      "size": 16041099264,
+      "is_dir": true,
+      "insight": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "Gradle Cache",
+      "path": "/Users/alex/.gradle/caches",
+      "size": 2787278848,
+      "is_dir": true,
+      "insight": true,
+      "cleanable": true
+    },
+    {
+      "scan_status": "partial",
+      "name": "System Library",
+      "path": "/Library",
+      "size": 2245160960,
+      "is_dir": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "Old Downloads (90d+)",
+      "path": "/Users/alex/Downloads",
+      "size": 827409253,
+      "is_dir": true,
+      "insight": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "uv Cache",
+      "path": "/Users/alex/.cache/uv",
+      "size": 651497472,
+      "is_dir": true,
+      "insight": true,
+      "cleanable": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "Homebrew Cache",
+      "path": "/Users/alex/Library/Caches/Homebrew",
+      "size": 83464192,
+      "is_dir": true,
+      "insight": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "System Logs",
+      "path": "/Users/alex/Library/Logs",
+      "size": 25153536,
+      "is_dir": true,
+      "insight": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "pip Cache",
+      "path": "/Users/alex/Library/Caches/pip",
+      "size": 8261632,
+      "is_dir": true,
+      "insight": true
+    },
+    {
+      "scan_status": "complete",
+      "name": "Xcode Simulators",
+      "path": "/Users/alex/Library/Developer/CoreSimulator/Devices",
+      "size": 4096,
+      "is_dir": true,
+      "insight": true
+    }
+  ],
+  "total_size": 160518508623
+}

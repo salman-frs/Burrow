@@ -1,0 +1,25 @@
+○ DRY RUN MODE, No installer files will be removed
+
+
+Select Installers to Remove , 0B, 0 selected
+
+➤ ○ Firefox 140.0.dmg                         142.6MB | Downloads 
+  ○ GoogleChrome.dmg                          236.1MB | Downloads 
+  ○ node-v22.12.0.pkg                          78.4MB | Downloads 
+  ○ VLC-3.0.21-arm64.dmg                       54.0MB | Downloads 
+  ○ Xcode_27.2_Release_Candidate.xip           2.05GB | Downloads 
+  ○ Zoom.pkg                                   89.7MB | Desktop 
+  ○ tailscale-setup.zip                        31.2MB | Downloads 
+
+
+
+
+
+
+
+
+
+
+
+
+↑↓  |  Space Select  |  Enter Confirm  |  A All  |  I Invert  |  Q Quit
