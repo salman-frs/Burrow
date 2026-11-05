@@ -1,40 +1,50 @@
 # Burrow
 
-A native macOS app for cleaning, uninstalling and maintaining your Mac. Every scan and every change runs through [Mole](https://github.com/tw93/Mole), the open-source cleanup CLI by tw93. Burrow ships a pinned copy of Mole inside the app and adds a SwiftUI interface on top. It never deletes files itself; Mole's protection rules, Trash routing and operation log stay in charge.
+A Mac cleaner that shows you your disk instead of a list. Burrow draws the startup disk as a cross-section of dots, with free space as the air on top, and lets you dig through it for caches, old installers and build leftovers.
 
-## What it does
+Every scan and every deletion is done by [Mole](https://github.com/tw93/Mole), the open-source cleanup CLI by tw93. Burrow bundles a pinned copy of Mole and puts a native SwiftUI interface on top. It never deletes a file itself.
 
-| Screen | Mole command | Notes |
-|---|---|---|
-| Overview | `mo status --watch` | Live health, CPU, memory, disk, battery, network |
-| Cleanup | `mo clean --dry-run`, `mo clean` | Preview first. System caches are optional and ask for your password |
-| Optimize | `mo optimize --dry-run`, `mo optimize` | Tasks that need admin access are skipped if you decline |
-| Uninstaller | `mo uninstall --list`, `--dry-run`, `mo uninstall` | Review every file before anything moves to the Trash |
-| App Slimming | `mo slim --dry-run`, `mo slim` | Lists universal apps; you pick them in Mole's own picker, which Burrow opens in Terminal |
-| Space Lens | `mo analyze --json` | Treemap and drill-down; Move to Trash is limited to your home folder |
-| Project Purge | `mo purge` | Build artifacts untouched for 7 days |
-| Installers | `mo installer` | Moves `.dmg`, `.pkg`, `.iso`, `.xip` and installer archives to the Trash |
-| History | `mo history --json` | Everything Mole removed or changed |
-| Settings | `~/.config/mole/whitelist`, `purge_paths`, `mo touchid` | Shared with the Mole CLI |
+![Burrow after a dig](docs/dig.png)
 
-## How Burrow drives Mole
+## What's inside
 
-- Read-only data comes from Mole's JSON output (`status`, `analyze`, `history`, `uninstall --list`).
-- Burrow builds its previews from the same text Mole prints for `--dry-run`, so they match what Mole will do.
-- Mole only lets you choose installers and project artifacts through its terminal menus. Burrow runs those menus in a hidden terminal and steps through them row by row, so exactly what you selected is marked. It then reads Mole's own confirmation list and presses Enter only when that list matches your selection. On any difference it backs out and nothing changes.
-- Uninstall works the same way: Burrow confirms only when Mole's plan names the exact app bundles you picked. If another installed app answers to the same name, Burrow refuses and points you to `mo uninstall` in Terminal.
-- App Slimming is the exception. Mole's slim picker redraws only the rows that change, which Burrow cannot follow reliably, so that choice happens in Terminal.
-- **Administrator access.** Each run gets its own pseudo-terminal, so a single password covers the whole run. When sudo asks, Burrow shows a native password sheet and passes the password straight to sudo; it never stores it. If you turn on Touch ID for administrator tasks in Settings, macOS shows its own Touch ID prompt instead.
+**Dig.** One scan runs Mole's previews for caches, installers and build leftovers. Each finding lights up as a vein in your home folder's layer. Uncheck what you want to keep, press Clear, and the ground settles into the space you got back. Tune up (Mole's maintenance tasks) and live CPU, memory and battery sit in the toolbar.
+
+**Apps.** Pick an app, or drop one on the panel, to see everything that leaves with it: the app, its data, caches and settings, and your personal data if you choose. Apps that still carry Intel code can be slimmed instead.
+
+**Space.** Folders as layers. Double-click one to go deeper. Folders Mole thinks are worth a look are marked.
+
+**Log.** Everything Mole removed or changed, with the files of each run.
+
+**Settings** (⌘,) edits the same files as the Mole command line: protected paths, project folders, and Touch ID for administrator tasks.
+
+## Safety
+
+- Every preview is a Mole dry run. Nothing changes until you press Clear or Uninstall.
+- Mole can't clean some cache categories and skip others, so caches clear together. Keep adds a path to Mole's protected list. If the cache preview didn't finish, Clear leaves caches alone.
+- Installers and uninstalled apps go to the Trash. Build leftovers are deleted. Mole only offers ones untouched for 7 days, and they start unchecked.
+- Installers, build leftovers and uninstalls go through Mole's own menus. Burrow selects your picks row by row and confirms only when Mole's confirmation lists exactly those items. On any difference it backs out and nothing changes.
+- If another installed app answers to the same name, Burrow won't uninstall and points you to `mo uninstall`.
+- Your password goes straight to sudo for one run and is never stored. With Touch ID turned on, macOS asks instead.
+- Slimming happens in Mole's own picker in Terminal, because Burrow can't follow that menu reliably.
+- Space moves things to the Trash only inside your home folder, and never the folders macOS depends on.
 
 ## Build
 
-Requires macOS 14 or later, Swift 6 (Command Line Tools are enough) and Go.
+Requires macOS 14 or later, Swift 6 (Command Line Tools are enough) and Go. On macOS 26 and later the panels use Liquid Glass.
 
 ```bash
 ./scripts/build-app.sh
 ```
 
-The script clones the Mole tag pinned in `MOLE_VERSION`, builds Mole's Go tools for both architectures, and writes `dist/Burrow.app`. Point it at a local Mole checkout with `MOLE_SOURCE=/path/to/Mole`. The app is signed ad hoc unless you set `SIGN_IDENTITY`. Distributing it outside your own Mac needs a Developer ID signature and notarization.
+The script fetches the Mole tag pinned in `MOLE_VERSION`, builds Mole's Go tools for both architectures, and writes `dist/Burrow.app`. To use a local Mole checkout instead, set `MOLE_SOURCE=/path/to/Mole`. Without Xcode, Burrow itself is built for Apple Silicon only. The app is signed ad hoc unless you set `SIGN_IDENTITY`; distributing it needs a Developer ID signature and notarization.
+
+To run a debug build against the Mole that `build-app.sh` prepared:
+
+```bash
+swift build
+BURROW_MOLE=.build/app/mole/mole BURROW_SESSION_HELPER=.build/debug/burrow-session .build/debug/Burrow
+```
 
 ## Test
 
@@ -42,15 +52,15 @@ The script clones the Mole tag pinned in `MOLE_VERSION`, builds Mole's Go tools 
 ./scripts/test.sh
 ```
 
-With `MOLE_SOURCE` set, it also runs the live tests against that checkout. They only use previews and dry runs, so nothing on the Mac changes.
+With `MOLE_SOURCE` set, it also runs live tests against that checkout. They only use previews and dry runs, so nothing on the Mac changes.
 
 ## Updating Mole
 
 1. Change `MOLE_VERSION` to the new tag.
 2. Run `MOLE_SOURCE=/path/to/Mole ./scripts/test.sh` against a checkout of that tag. The live tests drive the new Mole's real menus and previews.
-3. Refresh the fixtures under `Tests/BurrowCoreTests/Fixtures` from the new version's output.
+3. Refresh the fixtures in `Tests/BurrowCoreTests/Fixtures` from the new version's output.
 
-A format change then fails a test instead of breaking a screen.
+A change in Mole's output then fails a test instead of breaking a screen.
 
 ## License
 

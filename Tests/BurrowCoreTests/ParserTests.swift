@@ -15,8 +15,8 @@ private func fixtureData(_ name: String) throws -> Data {
     @Test func statusSnapshotDecodes() throws {
         let status = try MoleJSON.decode(StatusSnapshot.self, from: fixtureData("status.json"))
         #expect(status.healthScore == 67)
-        #expect(status.hardware.cpuModel == "Apple M1")
-        #expect(status.disks.first?.mount == "/")
+        #expect(status.hardware.model == "MacBook Air")
+        #expect(status.cpu.coreCount > 0)
         #expect(status.batteries?.first?.cycleCount == 497)
         #expect(status.topProcesses?.isEmpty == false)
     }

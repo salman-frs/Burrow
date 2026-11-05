@@ -12,14 +12,19 @@ struct BurrowApp: App {
                 .environment(model)
                 .frame(minWidth: 980, minHeight: 640)
         }
-        .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultSize(width: 1180, height: 760)
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 1200, height: 780)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") { model.showingSettings = true }
+                    .keyboardShortcut(",", modifiers: .command)
+                    .disabled(model.runner == nil)
+            }
             CommandMenu("Go") {
-                ForEach(Array(Module.allCases.enumerated()), id: \.element) { index, module in
-                    Button(module.title) { model.selection = module }
-                        .keyboardShortcut(index < 9 ? KeyEquivalent(Character("\(index + 1)")) : "0", modifiers: .command)
+                ForEach(Array(Section.allCases.enumerated()), id: \.element) { index, section in
+                    Button(section.title) { model.section = section }
+                        .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
                 }
             }
         }

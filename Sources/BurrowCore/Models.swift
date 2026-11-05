@@ -2,40 +2,27 @@ import Foundation
 
 // MARK: mo status --json / --watch
 
+/// Only what Burrow shows, so a field Mole renames or drops elsewhere never breaks the vitals.
 public struct StatusSnapshot: Decodable, Sendable, Equatable {
-    public let collectedAt: String
-    public let host: String
     public let uptime: String
-    public let procs: Int
     public let hardware: Hardware
     public let healthScore: Int
     public let healthScoreMsg: String
     public let cpu: CPU
     public let memory: Memory
-    public let disks: [Disk]
     public let trashSize: Int64
     public let network: [NetworkInterface]
     public let batteries: [Battery]?
-    public let thermal: Thermal?
     public let topProcesses: [ProcessUsage]?
 
     public struct Hardware: Decodable, Sendable, Equatable {
         public let model: String
-        public let cpuModel: String
-        public let totalRam: String
-        public let diskSize: String
         public let osVersion: String
     }
 
     public struct CPU: Decodable, Sendable, Equatable {
         public let usage: Double
-        public let perCore: [Double]?
-        public let load1: Double
-        public let load5: Double
-        public let load15: Double
         public let coreCount: Int
-        public let pCoreCount: Int?
-        public let eCoreCount: Int?
     }
 
     public struct Memory: Decodable, Sendable, Equatable {
@@ -44,16 +31,6 @@ public struct StatusSnapshot: Decodable, Sendable, Equatable {
         public let usedPercent: Double
         public let swapUsed: Int64
         public let swapTotal: Int64
-        public let pressure: String?
-    }
-
-    public struct Disk: Decodable, Sendable, Equatable, Identifiable {
-        public let mount: String
-        public let used: Int64
-        public let total: Int64
-        public let usedPercent: Double
-        public let external: Bool
-        public var id: String { mount }
     }
 
     public struct NetworkInterface: Decodable, Sendable, Equatable, Identifiable {
@@ -67,17 +44,7 @@ public struct StatusSnapshot: Decodable, Sendable, Equatable {
     public struct Battery: Decodable, Sendable, Equatable {
         public let percent: Double
         public let status: String
-        public let timeLeft: String
-        public let health: String
         public let cycleCount: Int
-        public let capacity: Int
-    }
-
-    public struct Thermal: Decodable, Sendable, Equatable {
-        public let cpuTemp: Double
-        public let batteryTemp: Double
-        public let fanSpeed: Int
-        public let systemPower: Double
     }
 
     public struct ProcessUsage: Decodable, Sendable, Equatable, Identifiable {
