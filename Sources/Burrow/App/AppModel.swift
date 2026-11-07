@@ -159,6 +159,7 @@ final class DiskModel {
     private(set) var free: Int64 = 0
     private(set) var overview: DiskReport?
     private(set) var loadingOverview = false
+    private var overviewRequested = false
     private weak var app: AppModel?
 
     func attach(to app: AppModel) {
@@ -178,18 +179,26 @@ final class DiskModel {
         free = values.volumeAvailableCapacityForImportantUsage ?? 0
     }
 
+    /// A request that arrives mid-measurement runs once more afterwards, since the running one may predate a change.
     func loadOverview() async {
-        guard let app, let runner = app.runner, !loadingOverview else { return }
+        guard let app, let runner = app.runner else { return }
+        guard !loadingOverview else {
+            overviewRequested = true
+            return
+        }
         loadingOverview = true
         defer { loadingOverview = false }
-        do {
-            let result = try await runner.capture(["analyze", "--json"])
-            overview = try MoleJSON.decode(DiskReport.self, from: result.output)
-            refreshVolume()
-            app.dig.layersChanged()
-            app.space.layersChanged()
-        } catch {
-            app.notify("Mole could not measure the disk. \(error.localizedDescription)", symbol: "exclamationmark.triangle.fill", warning: true)
-        }
+        repeat {
+            overviewRequested = false
+            do {
+                let result = try await runner.capture(["analyze", "--json"])
+                overview = try MoleJSON.decode(DiskReport.self, from: result.output)
+                refreshVolume()
+                app.dig.layersChanged()
+                app.space.layersChanged()
+            } catch {
+                app.notify("Mole could not measure the disk. \(error.localizedDescription)", symbol: "exclamationmark.triangle.fill", warning: true)
+            }
+        } while overviewRequested
     }
 }

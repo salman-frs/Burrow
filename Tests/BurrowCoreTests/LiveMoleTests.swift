@@ -24,6 +24,13 @@ struct LiveMole {
         #expect(outcome.summary.contains { $0.contains("Would remove 2 installers") })
     }
 
+    @Test func installerScanListsEveryInstallerMoleCounts() async throws {
+        let paged = try await runner.capture(["installer", "--dry-run"])
+        let screen = TerminalText.plain(String(decoding: paged.output, as: UTF8.self))
+        let total = InstallerWorkflow.itemCount(in: screen) ?? InstallerWorkflow.parseMenu(screen).count
+        #expect(try await InstallerWorkflow.scan(with: runner).count == total)
+    }
+
     @Test func purgeSelectionDrivesMolesOwnConfirmation() async throws {
         let (artifacts, _) = try await PurgeWorkflow.scan(with: runner)
         try #require(artifacts.count >= 3, "needs project artifacts")

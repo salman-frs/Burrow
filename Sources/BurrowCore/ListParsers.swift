@@ -47,7 +47,7 @@ public enum PurgePreviewParser {
                   let sizeRange = Range(match.range(at: 2), in: line)
             else { return nil }
             let size = String(line[sizeRange])
-            return PathEntry(path: Paths.expandingTilde(String(line[pathRange])),
+            return PathEntry(path: PurgeWorkflow.artifactPath(String(line[pathRange])),
                              sizeLabel: size, bytes: ByteSize.firstSize(in: size))
         }
     }

@@ -146,10 +146,60 @@ public enum InstallerWorkflow {
     static let menuTitle = "Select Installers to Remove"
     private static let row = try! NSRegularExpression(pattern: #"^(.+?)\s{2,}(\S+)\s+\|\s+(.+)$"#)
 
+    /// Mole draws one page of its menu, 18 rows when it has no terminal, so the scan reads the menu
+    /// in a pseudo-terminal, as the removal does, and pages down while rows are still missing.
     public static func scan(with runner: MoleRunner) async throws -> [InstallerFile] {
-        let result = try await runner.capture(["installer", "--dry-run"])
-        let screen = TerminalText.plain(String(decoding: result.output, as: UTF8.self))
-        return parseMenu(screen)
+        let session = try runner.start(["installer", "--dry-run"], options: SessionOptions(interactive: true))
+        let driver = MenuDriver(session: session, title: menuTitle) { frame in
+            frame.cursor.map { Rows.normalized($0.text) }
+        }
+        var frame: MenuFrame
+        do {
+            frame = try await driver.waitForMenu(timeout: 120)
+        } catch {
+            _ = try? await session.exitCode()
+            if !session.screen().contains(menuTitle) { return [] }
+            throw error
+        }
+        do {
+            var rows: [String: String] = [:]
+            var order: [String] = []
+            func collect(_ frame: MenuFrame) {
+                for row in frame.rows where rows[Rows.normalized(row.text)] == nil {
+                    rows[Rows.normalized(row.text)] = row.text
+                    order.append(Rows.normalized(row.text))
+                }
+            }
+            collect(frame)
+            let total = itemCount(in: session.screen()) ?? order.count
+            while order.count < total {
+                let current = driver.identity(frame)
+                frame = try await driver.press(.down)
+                collect(frame)
+                if driver.identity(frame) == current { break }
+            }
+            await quit(session)
+            return order.compactMap { rows[$0].flatMap(file(fromRow:)) }
+        } catch {
+            await quit(session)
+            throw error
+        }
+    }
+
+    /// A menu longer than one page shows its size in the title, as in `[1/33]`.
+    static func itemCount(in screen: String) -> Int? {
+        guard let title = screen.range(of: menuTitle, options: .backwards),
+              let match = screen[title.upperBound...].firstMatch(of: /^\s*\[\d+\/(\d+)\]/)
+        else { return nil }
+        return Int(match.1)
+    }
+
+    /// Nothing has been confirmed in a dry run, so a Mole that ignores Quit can be stopped outright.
+    private static func quit(_ session: MoleSession) async {
+        session.send(.text("q"))
+        try? await Task.sleep(for: .milliseconds(300))
+        session.interrupt(force: true)
+        _ = try? await session.exitCode()
     }
 
     static func parseMenu(_ screen: String) -> [InstallerFile] {

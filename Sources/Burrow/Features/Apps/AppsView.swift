@@ -40,9 +40,18 @@ private struct AppsToolbar: View {
                 Image(systemName: "magnifyingglass").foregroundStyle(.tertiary)
                 TextField("Search", text: $model.search)
                     .textFieldStyle(.plain)
+                    .onExitCommand { model.search = "" }
                     .accessibilityLabel("Search apps")
+                if !model.search.isEmpty {
+                    Button { model.search = "" } label: { Image(systemName: "xmark.circle.fill") }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.tertiary)
+                        .help("Clear search")
+                        .accessibilityLabel("Clear search")
+                }
             }
-            .padding(.horizontal, 14)
+            .padding(.leading, 14)
+            .padding(.trailing, 10)
             .frame(width: 210, height: 38)
             .glass(Capsule())
             HStack(spacing: 0) {
@@ -99,6 +108,8 @@ private struct AppGrid: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if model.visibleApps.isEmpty {
+            EmptyGrid(model: model)
         } else {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 4)], spacing: 4) {
@@ -118,6 +129,42 @@ private struct AppGrid: View {
             }
             .animation(.spring(duration: 0.45, bounce: 0.25), value: model.visibleApps.map(\.id))
         }
+    }
+}
+
+private struct EmptyGrid: View {
+    let model: AppsModel
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: searching ? "magnifyingglass" : "scissors")
+                .font(.system(size: 26, weight: .light))
+                .foregroundStyle(.tertiary)
+            Text(title).font(.system(size: 14, weight: .medium))
+            Text(detail)
+                .font(.system(size: 12.5))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            if searching {
+                Button("Clear search") { model.search = "" }
+                    .buttonStyle(QuietButtonStyle(height: 32, filled: true))
+                    .padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: 320)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.bottom, 60)
+    }
+
+    private var searching: Bool { !model.search.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    private var title: String {
+        searching ? "No apps match \u{201C}\(model.search.trimmingCharacters(in: .whitespaces))\u{201D}" : "Nothing to slim"
+    }
+
+    private var detail: String {
+        if searching { return model.order == .slimmable ? "Only apps that still carry Intel code are listed here." : "Try the app's name or bundle ID." }
+        return model.slimmableChecked ? "Every app here is already Apple silicon only." : "Mole is still checking your apps for Intel code."
     }
 }
 
@@ -295,6 +342,7 @@ private struct AppDetail: View {
                 VStack(spacing: 2) {
                     ForEach(FootprintPart.allCases, id: \.self) { part in
                         LegendRow(swatch: theme.color(of: part.shade).color(), title: part.title, bytes: model.bytes(of: part),
+                                  measuring: model.planning && part != .app,
                                   paths: model.paths[part] ?? [], expanded: expanded == part) {
                             withAnimation(.spring(duration: 0.35, bounce: 0.2)) { expanded = expanded == part ? nil : part }
                         }
@@ -338,18 +386,26 @@ private struct LegendRow: View {
     let swatch: Color
     let title: String
     let bytes: Int64
+    let measuring: Bool
     let paths: [String]
     let expanded: Bool
     let toggle: () -> Void
 
     var body: some View {
+        let empty = bytes == 0
         VStack(alignment: .leading, spacing: 0) {
             Button(action: toggle) {
                 HStack(spacing: 10) {
-                    Circle().fill(swatch).frame(width: 9, height: 9)
-                    Text(title).foregroundStyle(.secondary)
+                    Circle().fill(swatch).frame(width: 9, height: 9).opacity(empty ? 0.4 : 1)
+                    Text(title).foregroundStyle(empty ? .tertiary : .secondary)
                     Spacer()
-                    Text(ByteText.string(bytes)).fontWeight(.semibold).monospacedDigit()
+                    Text(measuring ? "…" : empty ? "None" : ByteText.string(bytes))
+                        .fontWeight(empty ? .regular : .semibold)
+                        .monospacedDigit()
+                        .foregroundStyle(empty ? .tertiary : .primary)
+                        .contentTransition(.numericText(value: Double(bytes)))
+                    Chevron(expanded: expanded)
+                        .opacity(paths.isEmpty ? 0 : 1)
                 }
                 .font(.system(size: 12.5))
                 .frame(height: 28)
@@ -391,6 +447,7 @@ private struct PersonalDataRow: View {
                 .fontWeight(.semibold)
                 .monospacedDigit()
                 .foregroundStyle(model.includePersonalData ? .primary : .tertiary)
+            Color.clear.frame(width: 22)
         }
         .font(.system(size: 12.5))
         .frame(height: 28)

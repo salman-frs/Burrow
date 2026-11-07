@@ -7,12 +7,16 @@ final class VitalsModel {
     private(set) var snapshot: StatusSnapshot?
     private(set) var cpuHistory: [Double] = []
     private var stream: Task<Void, Never>?
+    /// A stopped stream finishes after the next one may have started, and must not forget it.
+    private var streamID: UUID?
     private weak var app: AppModel?
 
     func attach(to app: AppModel) { self.app = app }
 
     func start() {
         guard stream == nil, let runner = app?.runner else { return }
+        let id = UUID()
+        streamID = id
         stream = Task { [weak self] in
             do {
                 for try await event in runner.run(["status", "--watch", "--interval", "2s"]) {
@@ -21,7 +25,8 @@ final class VitalsModel {
                     self?.record(snapshot)
                 }
             } catch {}
-            self?.stream = nil
+            guard let self, self.streamID == id else { return }
+            self.stream = nil
         }
     }
 
@@ -58,8 +63,8 @@ struct VitalsPill: View {
                 Vital {
                     Image(systemName: "memorychip")
                     Ring(progress: snapshot.memory.usedPercent / 100)
-                    (Text(String(format: "%.1f", Double(snapshot.memory.used) / 1e9)).fontWeight(.semibold).foregroundStyle(.primary)
-                     + Text(" / \(ByteText.string(snapshot.memory.total))").font(.system(size: 11)).foregroundStyle(.tertiary))
+                    (Text(String(format: "%.1f", Double(snapshot.memory.used) / ByteText.gibibyte)).fontWeight(.semibold).foregroundStyle(.primary)
+                     + Text(" / \(ByteText.memory(snapshot.memory.total))").font(.system(size: 11)).foregroundStyle(.tertiary))
                 }
                 .help(memoryHelp)
                 if let battery = snapshot.batteries?.first {
@@ -90,7 +95,7 @@ struct VitalsPill: View {
     private var memoryHelp: String {
         let memory = snapshot.memory
         guard memory.swapTotal > 0 else { return "Memory" }
-        return "Memory, swap \(ByteText.string(memory.swapUsed)) of \(ByteText.string(memory.swapTotal))"
+        return "Memory, swap \(ByteText.memory(memory.swapUsed)) of \(ByteText.memory(memory.swapTotal))"
     }
 
     private func batterySymbol(_ battery: StatusSnapshot.Battery) -> String {
@@ -182,7 +187,7 @@ private struct HealthPopover: View {
                             Text(process.name).lineLimit(1)
                             Spacer()
                             Text("\(Int(process.cpu.rounded()))%").foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
-                            Text(ByteText.string(process.memoryBytes)).foregroundStyle(.secondary).frame(width: 64, alignment: .trailing)
+                            Text(ByteText.memory(process.memoryBytes)).foregroundStyle(.secondary).frame(width: 64, alignment: .trailing)
                         }
                         .font(.system(size: 12.5))
                         .monospacedDigit()

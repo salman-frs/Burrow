@@ -110,13 +110,13 @@ private struct NavRow: View {
             switch app.dig.phase {
             case .digging, .clearing:
                 Spinner(size: 13)
-            case .ready:
+            case .ready where app.dig.selectedTotal > 0:
                 Circle()
                     .fill(Palette.amber)
                     .frame(width: 8, height: 8)
                     .background(Circle().fill(Palette.amber.opacity(0.25)).frame(width: 14, height: 14))
                     .help("\(ByteText.string(app.dig.selectedTotal)) ready to clear")
-            case .idle, .done:
+            case .idle, .ready, .done:
                 EmptyView()
             }
         case .apps:
