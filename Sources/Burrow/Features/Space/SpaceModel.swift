@@ -103,11 +103,11 @@ final class SpaceModel {
         if reports[path] == nil { await load(path) } else { relayout(animated: true) }
     }
 
-    func go(to index: Int) {
+    func go(to index: Int) async {
         guard index < trail.count - 1 else { return }
         trail = Array(trail.prefix(index + 1))
         selectedID = nil
-        relayout(animated: true)
+        if let path = current.path, reports[path] == nil { await load(path) } else { relayout(animated: true) }
     }
 
     func chooseFolder() {
@@ -125,7 +125,6 @@ final class SpaceModel {
             await app?.disk.loadOverview()
             return
         }
-        reports[path] = nil
         await load(path)
     }
 
@@ -157,6 +156,7 @@ final class SpaceModel {
         do {
             try FileManager.default.trashItem(at: URL(fileURLWithPath: path), resultingItemURL: nil)
             selectedID = nil
+            for crumb in trail.dropLast() { if let folder = crumb.path { reports[folder] = nil } }
             app?.notify("\(item.name) moved to Trash", symbol: "trash.fill")
             app?.diskChanged()
             await refresh()
@@ -167,7 +167,7 @@ final class SpaceModel {
     }
 }
 
-/// Space only offers the Trash for things inside your home folder that are not
+/// Space only offers the Trash for things inside your home folder that neither are nor contain
 /// the folders macOS itself depends on; everything else is reveal-only.
 enum TrashPolicy {
     static func allows(_ path: String) -> Bool {
@@ -179,6 +179,6 @@ enum TrashPolicy {
         let protectedPrefixes = ["Library/Keychains", "Library/Mail", "Library/Messages", "Library/Mobile Documents",
                                  "Library/CloudStorage", "Library/Group Containers", "Library/Containers",
                                  "Library/Preferences", "Library/Application Support/com.apple"]
-        return !protectedPrefixes.contains { relative == $0 || relative.hasPrefix($0 + "/") }
+        return !protectedPrefixes.contains { relative == $0 || relative.hasPrefix($0 + "/") || $0.hasPrefix(relative + "/") }
     }
 }

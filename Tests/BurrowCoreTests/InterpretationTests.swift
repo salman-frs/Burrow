@@ -13,8 +13,13 @@ private func fixture(_ name: String) throws -> String {
         let layers = DiskLayers.make(overview: overview, used: 200_000_000_000, home: "/Users/alex")
         #expect(layers.map(\.name) == ["System", "Library", "Applications", "Home"])
         #expect(layers.map(\.bytes).reduce(0, +) == 200_000_000_000)
-        #expect(layers.last?.bytes == 75_222_768_874)
         #expect(layers.first?.path == nil)
+    }
+
+    @Test func homeLayerCountsTheUserLibraryMoleMeasuresSeparately() throws {
+        let overview = try MoleJSON.decode(DiskReport.self, from: Data(try fixture("analyze-overview.json").utf8))
+        let home = try #require(DiskLayers.make(overview: overview, used: 200_000_000_000, home: "/Users/alex").last)
+        #expect(home.bytes == 75_222_768_874 + 43_610_128_384)
     }
 
     @Test func systemLayerNeverGoesNegative() throws {

@@ -9,6 +9,7 @@ final class TuneUpModel {
     private(set) var phase: Phase = .idle
     private(set) var plan = MoleReport()
     private(set) var progress = MoleReport()
+    private(set) var failure: String?
     let job = MoleJob()
     private weak var app: AppModel?
 
@@ -28,17 +29,23 @@ final class TuneUpModel {
     func check() async {
         guard let runner = app?.runner, phase == .idle else { return }
         phase = .checking
+        failure = nil
         await job.run(["optimize", "--dry-run"], with: runner)
         if Task.isCancelled {
             phase = .idle
             return
         }
+        let plan = MoleReportParser.parse(job.text)
         if let error = job.failure {
-            app?.notify("Tune up could not check this Mac. \(error.localizedDescription)", symbol: "exclamationmark.triangle.fill", warning: true)
+            failure = "Tune up could not check this Mac. \(error.localizedDescription)"
+        } else if plan.sections.isEmpty {
+            failure = job.lastMeaningfulLine ?? "Mole listed no tasks to run."
+        }
+        guard failure == nil else {
             phase = .idle
             return
         }
-        plan = MoleReportParser.parse(job.text)
+        self.plan = plan
         phase = .ready
     }
 
@@ -57,10 +64,20 @@ final class TuneUpModel {
             self?.progress = MoleReportParser.parse(streamed)
         }
         progress = MoleReportParser.parse(job.text)
+        phase = .finished
         if let error = job.failure {
             app.notify(error.localizedDescription, symbol: "exclamationmark.triangle.fill", warning: true)
+        } else if job.stopping {
+            app.notify("Tune up stopped", symbol: "stop.circle.fill", warning: true)
+        } else {
+            let failed = tasks.filter { state(of: $0.title) == .failed }.count
+            if failed > 0 {
+                app.notify(failed == 1 ? "Tune up finished. 1 task failed." : "Tune up finished. \(failed) tasks failed.",
+                           symbol: "exclamationmark.triangle.fill", warning: true)
+            } else {
+                app.notify("Tune up finished", symbol: "bolt.fill")
+            }
         }
-        phase = .finished
     }
 
     func stop() { job.stop() }
@@ -79,8 +96,12 @@ struct TuneUpButton: View {
     var body: some View {
         Button { open.toggle() } label: {
             HStack(spacing: 7) {
-                Image(systemName: "bolt.fill").foregroundStyle(Palette.amber)
-                Text("Tune up").font(.system(size: 13, weight: .medium))
+                if app.tuneUp.phase == .running {
+                    Spinner(size: 13)
+                } else {
+                    Image(systemName: "bolt.fill").foregroundStyle(Palette.amber)
+                }
+                Text(app.tuneUp.phase == .running ? "Tuning up" : "Tune up").font(.system(size: 13, weight: .medium))
             }
             .padding(.leading, 12)
             .padding(.trailing, 15)
@@ -106,12 +127,29 @@ private struct TuneUpPopover: View {
             if let note = model.diagnosis.first {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Palette.amberText)
-                    Text(note.title).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
+                    Text(note.title)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 4)
             }
-            if model.phase == .idle || model.phase == .checking {
+            if let failure = model.failure, model.phase == .idle {
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(Palette.amberText)
+                    Text(failure)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, minHeight: 160)
+            } else if model.phase == .idle || model.phase == .checking {
                 VStack(spacing: 10) {
                     Spinner(size: 20)
                     Text("Checking").font(.system(size: 12)).foregroundStyle(.secondary)
@@ -134,6 +172,9 @@ private struct TuneUpPopover: View {
     @ViewBuilder
     private var action: some View {
         switch model.phase {
+        case .idle where model.failure != nil:
+            Button { Task { await model.check() } } label: { Text("Try again").frame(maxWidth: .infinity) }
+                .buttonStyle(QuietButtonStyle(filled: true))
         case .idle, .checking:
             Button {} label: { Text("Run all").frame(maxWidth: .infinity) }
                 .buttonStyle(AmberButtonStyle())
@@ -143,7 +184,8 @@ private struct TuneUpPopover: View {
                 Text("Run all \(model.tasks.count)").frame(maxWidth: .infinity)
             }
             .buttonStyle(AmberButtonStyle())
-                .disabled(!app.canStart(.tuneUp))
+            .disabled(!app.canStart(.tuneUp))
+            .help(app.canStart(.tuneUp) ? "" : "Another task is still running")
         case .running:
             Button { model.stop() } label: { Text(model.job.stopping ? "Stopping" : "Stop").frame(maxWidth: .infinity) }
                 .buttonStyle(QuietButtonStyle(filled: true))

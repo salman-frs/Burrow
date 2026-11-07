@@ -96,6 +96,8 @@ struct LogView: View {
             VStack(alignment: .leading, spacing: 0) {
                 ByteFigure(model.total, word: "cleared")
                     .animation(.easeOut(duration: 0.8), value: model.total)
+                    .opacity(model.loaded ? 1 : 0)
+                    .animation(.easeOut(duration: 0.3), value: model.loaded)
                 if !model.loaded {
                     Spinner(size: 20).padding(.top, 34)
                 } else if let failure = model.failure, model.entries.isEmpty {
@@ -178,17 +180,21 @@ private struct LogRow: View {
                 .frame(width: 210, alignment: .leading)
                 Pellets(count: pelletCount, partial: partialPellet, done: entry.command == "optimize")
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(entry.command == "optimize" ? "\(entry.fixes) fixes" : ByteText.string(entry.bytes))
+                Text(amount)
                     .font(.system(size: 13, weight: .semibold))
                     .monospacedDigit()
+                    .foregroundStyle(entry.command != "optimize" && entry.bytes == 0 ? .tertiary : .primary)
                     .frame(width: 78, alignment: .trailing)
+                Chevron(expanded: expanded)
+                    .opacity(entry.deletions.isEmpty ? 0 : 1)
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
             .frame(minHeight: 56)
             .contentShape(Rectangle())
             .onTapGesture(perform: toggle)
-            .accessibilityAddTraits(.isButton)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(entry.deletions.isEmpty ? [] : .isButton)
             .accessibilityAction { toggle() }
             if expanded {
                 VStack(spacing: 0) {
@@ -215,7 +221,8 @@ private struct LogRow: View {
                 .transition(.opacity)
             }
         }
-        .background(hovering || expanded ? Palette.hover : .clear, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background((hovering && !entry.deletions.isEmpty) || expanded ? Palette.hover : .clear,
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .padding(.horizontal, -12)
         .onHover { hovering = $0 }
         .help(entry.deletions.isEmpty ? "" : "Show what Mole logged")
@@ -224,6 +231,11 @@ private struct LogRow: View {
     private func toggle() {
         guard !entry.deletions.isEmpty else { return }
         withAnimation(.spring(duration: 0.35, bounce: 0.2)) { expanded.toggle() }
+    }
+
+    private var amount: String {
+        if entry.command == "optimize" { return entry.fixes == 1 ? "1 fix" : "\(entry.fixes) fixes" }
+        return entry.bytes > 0 ? ByteText.string(entry.bytes) : "–"
     }
 
     private var symbol: String {

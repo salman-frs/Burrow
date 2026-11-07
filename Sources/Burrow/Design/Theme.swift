@@ -52,6 +52,16 @@ enum ByteText {
         let (value, unit) = parts(bytes)
         return "\(value) \(unit)"
     }
+
+    /// Memory is sold and reported in binary units: 8 GB of RAM is 8 × 2³⁰ bytes.
+    static func memory(_ bytes: Int64) -> String {
+        let value = Double(max(bytes, 0))
+        guard value >= gibibyte else { return "\(Int((value / 1_048_576).rounded())) MB" }
+        let gigabytes = String(format: "%.1f", value / gibibyte)
+        return (gigabytes.hasSuffix(".0") ? String(gigabytes.dropLast(2)) : gigabytes) + " GB"
+    }
+
+    static let gibibyte = 1_073_741_824.0
 }
 
 extension Font {

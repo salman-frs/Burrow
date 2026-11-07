@@ -14,12 +14,12 @@ struct DigItem: Identifiable, Equatable {
 
 struct DigCategory: Identifiable, Equatable {
     enum Kind { case cache, installers, projects }
+    enum Selection { case none, some, all }
 
     let id: String
     let kind: Kind
     let vein: Int
     var items: [DigItem]
-    var included = true
     /// What Mole measured for a cache section, which is more than the paths its preview file lists.
     let measured: Int64
 
@@ -35,6 +35,12 @@ struct DigCategory: Identifiable, Equatable {
 
     var pickedBytes: Int64 {
         kind == .cache ? max(measured - keptBytes, 0) : items.filter(\.included).map(\.bytes).reduce(0, +)
+    }
+
+    var selection: Selection {
+        let picked = items.filter(\.included).count
+        if picked == 0 { return .none }
+        return picked == items.count ? .all : .some
     }
 }
 
@@ -75,7 +81,7 @@ final class DigModel {
     func picked(_ category: DigCategory) -> Int64 {
         switch category.kind {
         case .cache: cachesIncluded && cachesClearable ? category.pickedBytes : 0
-        case .installers, .projects: category.included ? category.pickedBytes : 0
+        case .installers, .projects: category.pickedBytes
         }
     }
 
@@ -210,7 +216,7 @@ final class DigModel {
             let items = found.map { entry in
                 let url = URL(fileURLWithPath: entry.path)
                 return DigItem(id: entry.id, name: "\(url.deletingLastPathComponent().lastPathComponent)/\(url.lastPathComponent)",
-                               path: entry.path, bytes: entry.bytes ?? 0)
+                               path: entry.path, bytes: entry.bytes ?? 0, included: false)
             }
             if !items.isEmpty { discover(.projects, id: "projects", items: items) }
         } catch {
@@ -227,7 +233,7 @@ final class DigModel {
 
     private func discover(_ kind: DigCategory.Kind, id: String, items: [DigItem], measured: Int64 = 0) {
         let category = DigCategory(id: id, kind: kind, vein: categories.count, items: items.sorted { $0.bytes > $1.bytes },
-                                   included: kind != .projects, measured: measured)
+                                   measured: measured)
         categories.append(category)
         guard let point = field.diggerPosition else { return }
         let bounds = digBounds
@@ -261,7 +267,8 @@ final class DigModel {
 
     func toggle(_ category: DigCategory) {
         guard canEdit(category), let index = categories.firstIndex(where: { $0.id == category.id }), category.isPickable else { return }
-        categories[index].included.toggle()
+        let include = category.selection == .none
+        for item in categories[index].items.indices { categories[index].items[item].included = include }
         relight()
     }
 
@@ -285,7 +292,6 @@ final class DigModel {
             }
         }
         categories[c].items[i].included.toggle()
-        if category.isPickable, categories[c].items[i].included { categories[c].included = true }
         relight()
     }
 
@@ -342,7 +348,9 @@ final class DigModel {
         if !stopped, !pickedArtifacts.isEmpty {
             clearing = .projects
             ticker = "Build leftovers"
-            await removal(.projects, picks: picks, rank: &rank) { try await PurgeWorkflow.remove(pickedArtifacts, with: runner) }
+            await removal(.projects, picks: picks, rank: &rank, removedAll: { _ in
+                pickedArtifacts.allSatisfy { !FileManager.default.fileExists(atPath: $0.path) }
+            }) { try await PurgeWorkflow.remove(pickedArtifacts, with: runner) }
         }
         clearing = nil
         field.setContinuous(false)
@@ -357,16 +365,19 @@ final class DigModel {
     }
 
     private func pickedIDs(_ kind: DigCategory.Kind) -> Set<String> {
-        guard let category = categories.first(where: { $0.kind == kind }), category.included else { return [] }
+        guard let category = categories.first(where: { $0.kind == kind }) else { return [] }
         return Set(category.items.filter(\.included).map(\.id))
     }
 
     /// Mole checks its own removal list against the pick before it confirms, so a file that changed since the dig is never removed blindly.
+    /// `mo purge` also exits with an error for artifacts it could not inspect while scanning, which were never
+    /// picked, so build leftovers count as removed once none of the picked paths is left.
     private func removal(_ kind: DigCategory.Kind, picks: [Int: Int64], rank: inout Int,
+                         removedAll: (RemovalOutcome) -> Bool = \.succeeded,
                          _ run: () async throws -> RemovalOutcome) async {
         do {
             let outcome = try await run()
-            if outcome.succeeded {
+            if removedAll(outcome) {
                 release(kind, picks: picks, rank: &rank)
             } else {
                 clearNotes += outcome.summary + outcome.notices

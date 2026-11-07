@@ -39,7 +39,7 @@ struct SettingsSheet: View {
                     }
                 }
                 .frame(maxHeight: 150)
-                .scrollIndicators(.never)
+                .scrollBounceBehavior(.basedOnSize)
                 if let problem {
                     Text(problem).font(.caption).foregroundStyle(Palette.danger).padding(.top, 6)
                 }

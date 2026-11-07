@@ -95,7 +95,7 @@ private struct Crumbs: View {
                 if index > 0 {
                     Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold)).foregroundStyle(.tertiary)
                 }
-                Button(crumb.path == nil ? model.diskName : crumb.name) { model.go(to: index) }
+                Button(crumb.path == nil ? model.diskName : crumb.name) { Task { await model.go(to: index) } }
                     .buttonStyle(CrumbStyle(current: index == model.trail.count - 1))
             }
             if model.loadingPath != nil {
@@ -104,10 +104,12 @@ private struct Crumbs: View {
             Button { model.chooseFolder() } label: { Image(systemName: "folder.badge.plus") }
                 .buttonStyle(IconButtonStyle())
                 .help("Measure another folder")
+                .accessibilityLabel("Measure another folder")
                 .padding(.leading, 6)
             Button { Task { await model.refresh() } } label: { Image(systemName: "arrow.clockwise") }
                 .buttonStyle(IconButtonStyle())
                 .help("Measure again")
+                .accessibilityLabel("Measure again")
                 .disabled(model.loadingPath != nil)
         }
         .padding(.leading, -10)
@@ -265,16 +267,22 @@ private struct SpaceDetail: View {
                 .background(Palette.amber.opacity(0.13), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             if let path = item.path {
-                HStack(spacing: 8) {
-                    if item.kind == .folder {
-                        Button { Task { await model.open(item) } } label: { Label("Open", systemImage: "folder").frame(maxWidth: .infinity) }
-                            .buttonStyle(QuietButtonStyle(height: 36, filled: true))
-                    }
-                    Button { revealInFinder(path) } label: { Label("Finder", systemImage: "arrow.up.forward.square").frame(maxWidth: .infinity) }
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        if item.kind == .folder {
+                            Button { Task { await model.open(item) } } label: { Label("Open", systemImage: "folder").frame(maxWidth: .infinity) }
+                                .buttonStyle(QuietButtonStyle(height: 36, filled: true))
+                        }
+                        Button { revealInFinder(path) } label: {
+                            Label("Finder", systemImage: "arrow.up.forward.square").frame(maxWidth: .infinity)
+                        }
                         .buttonStyle(QuietButtonStyle(height: 36, filled: true))
+                    }
                     if model.canTrash(item) {
-                        Button { model.pendingTrash = item } label: { Label("Trash", systemImage: "trash").frame(maxWidth: .infinity) }
-                            .buttonStyle(AmberButtonStyle(height: 36))
+                        Button { model.pendingTrash = item } label: {
+                            Label("Move to Trash", systemImage: "trash").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(AmberButtonStyle(height: 36))
                     }
                 }
             }

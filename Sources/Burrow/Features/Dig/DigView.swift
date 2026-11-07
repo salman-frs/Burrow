@@ -49,6 +49,11 @@ struct DigView: View {
             }
             .animation(.spring(duration: 0.55, bounce: 0.25), value: inspectorOpen)
         }
+        .onChange(of: model.phase) { _, phase in
+            guard phase == .digging || phase == .clearing else { return }
+            hover = nil
+            focusStratum = nil
+        }
         .onAppear { app.vitals.start() }
         .onDisappear { app.vitals.stop() }
     }
@@ -279,6 +284,17 @@ private struct DigInspector: View {
                 .animation(.spring(duration: 0.5, bounce: 0.3), value: model.categories.map(\.id))
             }
             .scrollIndicators(.never)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay {
+                if model.categories.isEmpty && model.phase == .digging {
+                    VStack(spacing: 6) {
+                        Text("Nothing found yet").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
+                        Text("Findings show up here as Mole digs.").font(.system(size: 12)).foregroundStyle(.tertiary)
+                    }
+                    .fixedSize()
+                    .transition(.opacity)
+                }
+            }
             let notes = model.phase == .done ? model.clearNotes : model.scanNotes
             if !model.review.isEmpty || !notes.isEmpty {
                 VStack(spacing: 0) {
@@ -296,7 +312,8 @@ private struct CachesHeader: View {
     let model: DigModel
 
     var body: some View {
-        let total = model.cacheCategories.map(model.picked).reduce(0, +)
+        let picked = model.cacheCategories.map(model.picked).reduce(0, +)
+        let total = picked > 0 ? picked : model.cacheCategories.map(\.total).reduce(0, +)
         HStack(spacing: 10) {
             Text("Caches")
                 .font(.system(size: 12, weight: .semibold))
@@ -305,7 +322,7 @@ private struct CachesHeader: View {
             Text(ByteText.string(total))
                 .font(.system(size: 12, weight: .semibold))
                 .monospacedDigit()
-                .foregroundStyle(model.cachesIncluded ? .secondary : .tertiary)
+                .foregroundStyle(picked > 0 ? .secondary : .tertiary)
                 .contentTransition(.numericText(value: Double(total)))
             Button { model.toggleCaches() } label: { CheckCircle(on: model.cachesIncluded && model.cachesClearable) }
                 .buttonStyle(.plain)
@@ -326,7 +343,9 @@ private struct CategoryRow: View {
     @ViewState private var hovering = false
 
     var body: some View {
-        let on = model.picked(category) > 0
+        let picked = model.picked(category)
+        let on = picked > 0
+        let shown = on ? picked : category.total
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 11) {
                 Button { withAnimation(.spring(duration: 0.35, bounce: 0.2)) { expanded.toggle() } } label: {
@@ -342,11 +361,11 @@ private struct CategoryRow: View {
                                 .lineLimit(1)
                             ShareBar(share: Double(category.total) / Double(max(model.largestCategory, 1)), muted: !on)
                         }
-                        Text(ByteText.string(model.picked(category)))
+                        Text(ByteText.string(shown))
                             .font(.system(size: 13, weight: .semibold))
                             .monospacedDigit()
                             .foregroundStyle(on ? .primary : .tertiary)
-                            .contentTransition(.numericText(value: Double(model.picked(category))))
+                            .contentTransition(.numericText(value: Double(shown)))
                         if !category.isPickable {
                             Chevron(expanded: expanded)
                         }
@@ -356,7 +375,9 @@ private struct CategoryRow: View {
                 .buttonStyle(.plain)
                 .accessibilityHint(expanded ? "Collapse" : "Expand")
                 if category.isPickable {
-                    Button { model.toggle(category) } label: { CheckCircle(on: category.included) }
+                    Button { model.toggle(category) } label: {
+                        CheckCircle(on: category.selection != .none, mixed: category.selection == .some)
+                    }
                         .buttonStyle(.plain)
                         .disabled(!model.canEdit(category))
                         .accessibilityLabel("Include \(category.name)")

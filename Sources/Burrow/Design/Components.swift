@@ -150,15 +150,18 @@ private struct IconButton: View {
 struct CheckCircle: View {
     let on: Bool
     var size: CGFloat = 22
+    /// Some, not all, of what the circle stands for is picked.
+    var mixed = false
 
     var body: some View {
         ZStack {
             Circle().fill(on ? Palette.amber.opacity(0.2) : .clear)
             Circle().strokeBorder(.tertiary, lineWidth: 1.6).opacity(on ? 0 : 1)
-            Image(systemName: "checkmark")
+            Image(systemName: mixed ? "minus" : "checkmark")
                 .font(.system(size: size * 0.5, weight: .heavy))
                 .foregroundStyle(Palette.amberText)
                 .opacity(on ? 1 : 0)
+                .contentTransition(.symbolEffect(.replace))
         }
         .frame(width: size, height: size)
         .animation(.spring(duration: 0.3, bounce: 0.4), value: on)

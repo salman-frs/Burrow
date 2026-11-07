@@ -13,6 +13,7 @@ final class AppsModel {
     private(set) var sizes: [String: Int64] = [:]
     /// Intel code Mole can strip, keyed by app path.
     private(set) var slimmable: [String: Int64] = [:]
+    private(set) var slimmableChecked = false
     private(set) var loading = false
     private(set) var failure: String?
     var search = ""
@@ -87,6 +88,7 @@ final class AppsModel {
     }
 
     private func findSlimmable(with runner: MoleRunner) async {
+        defer { slimmableChecked = true }
         guard let candidates = try? await SlimWorkflow.scan(with: runner) else { return }
         var found: [String: Int64] = [:]
         for candidate in candidates {

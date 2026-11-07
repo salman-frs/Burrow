@@ -99,6 +99,16 @@ private func fixtureData(_ name: String) throws -> Data {
         #expect(venv.bytes == 193_300_000)
     }
 
+    @Test func purgePreviewDropsTheCloudTag() {
+        let artifacts = PurgePreviewParser.parse("✓ [DRY RUN] [cloud] ~/Library/CloudStorage/Drive/app/node_modules, 9.0MB")
+        #expect(artifacts.map(\.path) == [NSHomeDirectory() + "/Library/CloudStorage/Drive/app/node_modules"])
+    }
+
+    @Test func installerMenuTitleCountsRowsBeyondThePage() {
+        #expect(InstallerWorkflow.itemCount(in: "Select Installers to Remove [1/33] , 0B, 0 selected") == 33)
+        #expect(InstallerWorkflow.itemCount(in: "Select Installers to Remove , 0B, 0 selected") == nil)
+    }
+
     @Test func slimPreviewListsApps() throws {
         let apps = SlimPreviewParser.parse(try fixture("slim-dry-run.txt"))
         #expect(apps.count == 16)
