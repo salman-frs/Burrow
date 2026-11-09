@@ -16,6 +16,16 @@ Take back your Mac's disk. Burrow finds what's eating your space, clears it safe
 
 Tune up runs routine maintenance, and CPU, memory and battery stay live in the toolbar.
 
+## Install
+
+macOS 14+:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/salman-frs/Burrow/main/install.sh | bash
+```
+
+Or download `Burrow.dmg` from [Releases](https://github.com/salman-frs/Burrow/releases/latest). It isn't notarized, so allow it once in System Settings > Privacy & Security > Open Anyway.
+
 ## Safe by default
 
 - Every scan is a dry run. Nothing changes until you press Clear or Uninstall.
@@ -54,6 +64,14 @@ BURROW_MOLE=.build/app/mole/mole BURROW_SESSION_HELPER=.build/debug/burrow-sessi
 With `MOLE_SOURCE` set, live tests also run against that checkout. They only use dry runs.
 
 To update Mole, bump `MOLE_VERSION`, run the live tests against that tag, and refresh `Tests/BurrowCoreTests/Fixtures` from its output.
+
+## Release
+
+Bump `VERSION`, merge, then push a matching tag. CI builds and publishes the release.
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
 
 ## License
 
