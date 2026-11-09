@@ -20,5 +20,9 @@ let package = Package(
             dependencies: ["BurrowCore"],
             resources: [.copy("Fixtures")]
         ),
+        .testTarget(
+            name: "BurrowTests",
+            dependencies: ["Burrow"]
+        ),
     ]
 )

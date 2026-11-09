@@ -50,8 +50,8 @@ struct DigView: View {
             }
             .animation(.spring(duration: 0.55, bounce: 0.25), value: inspectorOpen)
         }
-        .onChange(of: model.phase) { _, phase in
-            guard phase == .digging || phase == .clearing else { return }
+        .onChange(of: model.phase.isWorking) { _, working in
+            guard working else { return }
             hover = nil
             focusStratum = nil
         }
@@ -68,17 +68,17 @@ struct DigView: View {
     }
 
     private func pulsingVeins(_ model: DigModel) -> Set<Int> {
-        guard let kind = model.clearing else { return [] }
-        return Set(model.categories.filter { $0.kind == kind }.map(\.vein))
+        guard case .clearing(let step?, _) = model.phase else { return [] }
+        return Set(model.categories.filter { $0.kind == step }.map(\.vein))
     }
 
     private func hover(at location: CGPoint?) {
         let model = app.dig
-        guard let location, model.phase != .digging, model.phase != .clearing,
+        guard let location, !model.phase.isWorking,
               let cell = model.field.cell(at: location), cell.row >= model.field.firstRow else {
             hover = nil
             focusStratum = nil
-            if model.phase != .clearing { model.hoveredVein = nil }
+            model.hoveredVein = nil
             return
         }
         let theme = FieldTheme(scheme: scheme, accent: accent)
@@ -205,11 +205,11 @@ private struct DigCapsule: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(!app.canStart(.dig))
                 .help(app.canStart(.dig) ? "Scans only. Nothing is removed until you press Clear." : "Another task is still running")
-            case .digging:
-                Ticker(text: model.job.stopping ? "Stopping" : model.ticker)
+            case .digging(let stopping):
+                Ticker(text: stopping ? "Stopping" : model.ticker)
                 Button { model.stop() } label: { Label("Stop", systemImage: "stop.fill") }
                     .buttonStyle(QuietButtonStyle())
-                    .disabled(model.job.stopping)
+                    .disabled(stopping)
             case .ready:
                 Button("Dig again") { Task { await model.dig() } }
                     .buttonStyle(QuietButtonStyle())
@@ -219,12 +219,12 @@ private struct DigCapsule: View {
                 }
                 .buttonStyle(AccentButtonStyle())
                 .disabled(model.selectedTotal == 0 || !app.canStart(.dig))
-            case .clearing:
-                Ticker(text: model.job.stopping ? "Stopping after this step" : model.ticker)
-                if model.clearing == .cache && model.job.isRunning {
+            case .clearing(let step, let stopping):
+                Ticker(text: stopping ? "Stopping after this step" : model.ticker)
+                if step == .cache {
                     Button { model.stop() } label: { Label("Stop", systemImage: "stop.fill") }
                         .buttonStyle(QuietButtonStyle())
-                        .disabled(model.job.stopping)
+                        .disabled(stopping)
                 }
             case .done:
                 Button { app.section = .log } label: { Label("See log", systemImage: "clock") }
@@ -287,7 +287,7 @@ private struct DigInspector: View {
             .scrollIndicators(.never)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay {
-                if model.categories.isEmpty && model.phase == .digging {
+                if model.categories.isEmpty && model.phase.isDigging {
                     VStack(spacing: 6) {
                         Text("Nothing found yet").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
                         Text("Findings show up here as Mole digs.").font(.system(size: 12)).foregroundStyle(.tertiary)
@@ -409,7 +409,7 @@ private struct CategoryRow: View {
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onHover { inside in
             hovering = inside
-            if model.phase == .ready || model.phase == .digging { model.hoveredVein = inside ? category.vein : nil }
+            if model.phase == .ready || model.phase.isDigging { model.hoveredVein = inside ? category.vein : nil }
         }
         .transition(.asymmetric(insertion: .offset(x: 14).combined(with: .opacity), removal: .opacity))
     }

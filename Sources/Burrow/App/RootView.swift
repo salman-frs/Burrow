@@ -6,7 +6,6 @@ struct RootView: View {
 
     var body: some View {
         @Bindable var app = app
-        @Bindable var admin = app.admin
         ZStack(alignment: .topLeading) {
             LinearGradient(colors: [Palette.windowTop, Palette.windowBottom], startPoint: .top, endPoint: .bottom)
             if app.runner == nil {
@@ -35,8 +34,8 @@ struct RootView: View {
         .animation(.easeOut(duration: 0.3), value: app.section)
         .animation(.spring(duration: 0.45, bounce: 0.3), value: app.toast)
         .ignoresSafeArea()
-        .sheet(item: $admin.request) { request in
-            PasswordSheet(request: request) { admin.answer($0) }
+        .sheet(item: .constant(app.admin.request)) { request in
+            PasswordSheet(request: request) { app.admin.answer($0, to: request) }
                 .interactiveDismissDisabled()
         }
         .sheet(isPresented: $app.showingSettings) {

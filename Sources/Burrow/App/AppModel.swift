@@ -125,8 +125,9 @@ final class AdminBroker {
         let attempt: Int
     }
 
-    var request: Request?
-    private var pending: CheckedContinuation<String?, Never>?
+    private var pending: (request: Request, reply: CheckedContinuation<String?, Never>)?
+
+    var request: Request? { pending?.request }
 
     func provider(reason: String) -> AdminPasswordProvider {
         { [weak self] attempt in
@@ -136,30 +137,29 @@ final class AdminBroker {
     }
 
     private func ask(reason: String, attempt: Int) async -> String? {
-        pending?.resume(returning: nil)
-        return await withCheckedContinuation { continuation in
-            pending = continuation
-            request = Request(reason: reason, attempt: attempt)
+        if let unanswered = pending { answer(nil, to: unanswered.request) }
+        return await withCheckedContinuation { reply in
+            pending = (Request(reason: reason, attempt: attempt), reply)
         }
     }
 
-    func answer(_ password: String?) {
-        let continuation = pending
-        pending = nil
-        request = nil
-        continuation?.resume(returning: password)
+    func answer(_ password: String?, to request: Request) {
+        guard let pending, pending.request.id == request.id else { return }
+        self.pending = nil
+        pending.reply.resume(returning: password)
     }
 }
 
 @MainActor
 @Observable
 final class DiskModel {
+    enum Measurement { case idle, measuring, measuringThenAgain }
+
     private(set) var name = "Macintosh HD"
     private(set) var total: Int64 = 0
     private(set) var free: Int64 = 0
     private(set) var overview: DiskReport?
-    private(set) var loadingOverview = false
-    private var overviewRequested = false
+    private(set) var measurement = Measurement.idle
     private weak var app: AppModel?
 
     func attach(to app: AppModel) {
@@ -168,6 +168,7 @@ final class DiskModel {
     }
 
     var used: Int64 { max(total - free, 0) }
+    var isMeasuring: Bool { measurement != .idle }
     var layers: [DiskLayer] { DiskLayers.make(overview: overview, used: used) }
 
     func refreshVolume() {
@@ -182,14 +183,12 @@ final class DiskModel {
     /// A request that arrives mid-measurement runs once more afterwards, since the running one may predate a change.
     func loadOverview() async {
         guard let app, let runner = app.runner else { return }
-        guard !loadingOverview else {
-            overviewRequested = true
+        guard measurement == .idle else {
+            measurement = .measuringThenAgain
             return
         }
-        loadingOverview = true
-        defer { loadingOverview = false }
         repeat {
-            overviewRequested = false
+            measurement = .measuring
             do {
                 let result = try await runner.capture(["analyze", "--json"])
                 overview = try MoleJSON.decode(DiskReport.self, from: result.output)
@@ -199,6 +198,7 @@ final class DiskModel {
             } catch {
                 app.notify("Mole could not measure the disk. \(error.localizedDescription)", symbol: "exclamationmark.triangle.fill", warning: true)
             }
-        } while overviewRequested
+        } while measurement == .measuringThenAgain
+        measurement = .idle
     }
 }

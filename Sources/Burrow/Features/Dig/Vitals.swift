@@ -6,9 +6,8 @@ import SwiftUI
 final class VitalsModel {
     private(set) var snapshot: StatusSnapshot?
     private(set) var cpuHistory: [Double] = []
-    private var stream: Task<Void, Never>?
     /// A stopped stream finishes after the next one may have started, and must not forget it.
-    private var streamID: UUID?
+    private var stream: (id: UUID, task: Task<Void, Never>)?
     private weak var app: AppModel?
 
     func attach(to app: AppModel) { self.app = app }
@@ -16,8 +15,7 @@ final class VitalsModel {
     func start() {
         guard stream == nil, let runner = app?.runner else { return }
         let id = UUID()
-        streamID = id
-        stream = Task { [weak self] in
+        let task = Task { [weak self] in
             do {
                 for try await event in runner.run(["status", "--watch", "--interval", "2s"]) {
                     guard case .line(let line) = event, line.hasPrefix("{"),
@@ -25,13 +23,14 @@ final class VitalsModel {
                     self?.record(snapshot)
                 }
             } catch {}
-            guard let self, self.streamID == id else { return }
+            guard let self, self.stream?.id == id else { return }
             self.stream = nil
         }
+        stream = (id, task)
     }
 
     func stop() {
-        stream?.cancel()
+        stream?.task.cancel()
         stream = nil
     }
 
