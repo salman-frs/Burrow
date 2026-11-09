@@ -55,9 +55,9 @@ struct VitalsPill: View {
                     Image(systemName: "cpu")
                     Sparkline(values: cpuHistory).frame(width: 42, height: 18)
                     Text("\(Int(snapshot.cpu.usage.rounded()))%").fontWeight(.semibold)
-                        .foregroundStyle(hot ? Palette.amberText : .primary)
+                        .foregroundStyle(hot ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.primary))
                 }
-                .foregroundStyle(hot ? AnyShapeStyle(Palette.amberText) : AnyShapeStyle(.secondary))
+                .foregroundStyle(hot ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.secondary))
                 .help("Processor, \(snapshot.cpu.coreCount) cores")
                 Divider().frame(height: 16)
                 Vital {
@@ -124,6 +124,7 @@ private struct Vital<Content: View>: View {
 
 private struct Sparkline: View {
     let values: [Double]
+    @Environment(\.accent) private var accent
 
     var body: some View {
         Canvas { context, size in
@@ -138,9 +139,10 @@ private struct Sparkline: View {
             area.addLine(to: CGPoint(x: size.width, y: size.height))
             area.addLine(to: CGPoint(x: 0, y: size.height))
             area.closeSubpath()
-            context.fill(area, with: .linearGradient(Gradient(colors: [Palette.amber.opacity(0.28), Palette.amber.opacity(0)]),
+            let color = accent.fill.color
+            context.fill(area, with: .linearGradient(Gradient(colors: [color.opacity(0.28), color.opacity(0)]),
                                                      startPoint: .zero, endPoint: CGPoint(x: 0, y: size.height)))
-            context.stroke(line, with: .color(Palette.amber), style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
+            context.stroke(line, with: .color(color), style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
         }
     }
 }
@@ -152,7 +154,7 @@ private struct Ring: View {
         ZStack {
             Circle().stroke(Palette.hairline, lineWidth: 3.5)
             Circle().trim(from: 0, to: min(max(progress, 0), 1))
-                .stroke(Palette.amber, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                .stroke(Palette.accent, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
         }
         .frame(width: 13, height: 13)
@@ -169,7 +171,7 @@ private struct HealthPopover: View {
                 ZStack {
                     Circle().stroke(Palette.hairline, lineWidth: 6)
                     Circle().trim(from: 0, to: CGFloat(snapshot.healthScore) / 100)
-                        .stroke(Palette.amber, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .stroke(Palette.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     Text("\(snapshot.healthScore)").font(.system(size: 20, weight: .semibold)).monospacedDigit()
                 }

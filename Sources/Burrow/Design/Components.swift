@@ -55,19 +55,20 @@ private struct HoverHighlight: ViewModifier {
 
 // MARK: Buttons
 
-struct AmberButtonStyle: ButtonStyle {
+struct AccentButtonStyle: ButtonStyle {
     var height: CGFloat = 40
 
     func makeBody(configuration: Configuration) -> some View {
-        AmberButton(configuration: configuration, height: height)
+        AccentButton(configuration: configuration, height: height)
     }
 }
 
-private struct AmberButton: View {
+private struct AccentButton: View {
     let configuration: ButtonStyleConfiguration
     let height: CGFloat
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accent) private var accent
 
     var body: some View {
         let dark = scheme == .dark
@@ -75,17 +76,17 @@ private struct AmberButton: View {
             .font(.system(size: height >= 40 ? 14 : 13, weight: .semibold))
             .tracking(-0.14)
             .lineLimit(1)
-            .foregroundStyle(Palette.amberInk)
+            .foregroundStyle(Palette.onAccent)
             .padding(.horizontal, 20)
             .frame(height: height)
             .background {
-                Capsule().fill(dark ? AnyShapeStyle(LinearGradient(colors: [Palette.amberHot, Palette.amber], startPoint: .top, endPoint: .center))
-                                    : AnyShapeStyle(Palette.amber))
+                Capsule().fill(dark ? AnyShapeStyle(LinearGradient(colors: [accent.bright.color, accent.fill.color], startPoint: .top, endPoint: .center))
+                                    : AnyShapeStyle(Palette.accent))
             }
             .overlay {
                 Capsule().strokeBorder(LinearGradient(colors: [.white.opacity(dark ? 0.55 : 0.35), .clear], startPoint: .top, endPoint: .center), lineWidth: 1)
             }
-            .shadow(color: Palette.amber.opacity(isEnabled ? (dark ? 0.38 : 0.22) : 0), radius: dark ? 12 : 6, y: dark ? 8 : 4)
+            .shadow(color: accent.fill.color.opacity(isEnabled ? (dark ? 0.3 : 0.2) : 0), radius: dark ? 12 : 6, y: dark ? 8 : 4)
             .contentShape(Capsule())
             .opacity(isEnabled ? 1 : 0.45)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
@@ -155,11 +156,11 @@ struct CheckCircle: View {
 
     var body: some View {
         ZStack {
-            Circle().fill(on ? Palette.amber.opacity(0.2) : .clear)
+            Circle().fill(Palette.accent.opacity(on ? 0.2 : 0))
             Circle().strokeBorder(.tertiary, lineWidth: 1.6).opacity(on ? 0 : 1)
             Image(systemName: mixed ? "minus" : "checkmark")
                 .font(.system(size: size * 0.5, weight: .heavy))
-                .foregroundStyle(Palette.amberText)
+                .foregroundStyle(Palette.accentText)
                 .opacity(on ? 1 : 0)
                 .contentTransition(.symbolEffect(.replace))
         }
@@ -175,13 +176,13 @@ struct ByteFigure: View, Animatable {
     var bytes: Double
     var word: String?
     var size: CGFloat = 64
-    var amber = false
+    var accent = false
 
-    init(_ bytes: Int64, word: String? = nil, size: CGFloat = 64, amber: Bool = false) {
+    init(_ bytes: Int64, word: String? = nil, size: CGFloat = 64, accent: Bool = false) {
         self.bytes = Double(bytes)
         self.word = word
         self.size = size
-        self.amber = amber
+        self.accent = accent
     }
 
     nonisolated var animatableData: Double {
@@ -198,7 +199,7 @@ struct ByteFigure: View, Animatable {
                 .monospacedDigit()
             Text(unit)
                 .font(.system(size: size * 0.41, weight: .semibold))
-                .foregroundStyle(amber ? AnyShapeStyle(Palette.amberText.opacity(0.65)) : AnyShapeStyle(.secondary))
+                .foregroundStyle(accent ? AnyShapeStyle(Palette.accentText.opacity(0.65)) : AnyShapeStyle(.secondary))
                 .padding(.leading, size * 0.08)
             if let word {
                 Text(word)
@@ -207,7 +208,7 @@ struct ByteFigure: View, Animatable {
                     .padding(.leading, size * 0.19)
             }
         }
-        .foregroundStyle(amber ? AnyShapeStyle(Palette.amberText) : AnyShapeStyle(.primary))
+        .foregroundStyle(accent ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.primary))
         .lineLimit(1)
         .fixedSize()
         .accessibilityElement(children: .ignore)
@@ -221,8 +222,8 @@ struct Spinner: View {
 
     var body: some View {
         ZStack {
-            Circle().stroke(Palette.amber.opacity(0.25), lineWidth: 2)
-            Circle().trim(from: 0, to: 0.25).stroke(Palette.amber, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+            Circle().stroke(Palette.accent.opacity(0.25), lineWidth: 2)
+            Circle().trim(from: 0, to: 0.25).stroke(Palette.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(spinning ? 360 : 0))
         }
         .frame(width: size, height: size)
@@ -236,11 +237,12 @@ struct Spinner: View {
 struct ShareBar: View {
     let share: Double
     var muted = false
+    @Environment(\.accent) private var accent
 
     var body: some View {
         GeometryReader { proxy in
             Capsule()
-                .fill(LinearGradient(colors: [Palette.amber, Palette.amber.opacity(0.45)], startPoint: .leading, endPoint: .trailing))
+                .fill(LinearGradient(colors: [accent.fill.color, accent.fill.color.opacity(0.45)], startPoint: .leading, endPoint: .trailing))
                 .frame(width: max(4, proxy.size.width * min(max(share, 0), 1)))
                 .saturation(muted ? 0 : 1)
                 .opacity(muted ? 0.4 : 1)
@@ -265,7 +267,7 @@ struct Chevron: View {
 
 struct DisclosureRow<Content: View>: View {
     let symbol: String
-    var tint: Color?
+    var tint: AccentStyle?
     let title: String
     var bytes: Int64?
     @ViewBuilder let content: Content
@@ -336,7 +338,7 @@ struct ToastView: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: toast.symbol)
-                .foregroundStyle(toast.warning ? Palette.amberText : Palette.ok)
+                .foregroundStyle(toast.warning ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.secondary))
                 .font(.system(size: 14, weight: .semibold))
             Text(toast.text).font(.system(size: 13, weight: .medium)).lineLimit(2)
         }
@@ -372,6 +374,26 @@ struct FieldTooltip: View {
         .fixedSize()
         .glass(RoundedRectangle(cornerRadius: 11, style: .continuous), strong: true)
         .allowsHitTesting(false)
+    }
+}
+
+// MARK: Window
+
+/// An empty toolbar makes macOS lower the traffic lights into the sidebar's glass instead of onto its edge.
+struct WindowChrome: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { ChromeView() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class ChromeView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let window, window.toolbar == nil else { return }
+            window.toolbar = NSToolbar(identifier: "Burrow")
+            window.toolbarStyle = .unified
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.titlebarSeparatorStyle = .none
+        }
     }
 }
 

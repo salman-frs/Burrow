@@ -235,10 +235,7 @@ final class DigModel {
         let category = DigCategory(id: id, kind: kind, vein: categories.count, items: items.sorted { $0.bytes > $1.bytes },
                                    measured: measured)
         categories.append(category)
-        guard let point = field.diggerPosition else { return }
-        let bounds = digBounds
-        field.placeVein(category.vein, bytes: category.total, near: CGPoint(x: point.x, y: point.y + 6),
-                        from: bounds.min, to: bounds.max)
+        field.markTrail(category.vein, bytes: category.total)
     }
 
     /// `mo clean --dry-run` writes the paths behind each section to Mole's preview file; with them a
@@ -388,12 +385,11 @@ final class DigModel {
     }
 
     private func release(_ kind: DigCategory.Kind, picks: [Int: Int64], rank: inout Int) {
-        let bounds = digBounds
         for category in categories where category.kind == kind {
             let bytes = picks[category.vein, default: 0]
             cleared += bytes
             remaining = max(remaining - bytes, 0)
-            field.release(category.vein, rank: rank, from: bounds.min, to: bounds.max)
+            field.release(category.vein, rank: rank)
             rank += 1
         }
     }

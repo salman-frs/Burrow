@@ -4,6 +4,7 @@ import SwiftUI
 struct DigView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accent) private var accent
     @ViewState private var hover: FieldHover?
     @ViewState private var focusStratum: Int?
 
@@ -80,11 +81,11 @@ struct DigView: View {
             if model.phase != .clearing { model.hoveredVein = nil }
             return
         }
-        let theme = FieldTheme.of(scheme)
-        if cell.vein >= 0, cell.revealedAt > 0, let category = model.categories.first(where: { $0.vein == cell.vein }) {
+        let theme = FieldTheme(scheme: scheme, accent: accent)
+        if cell.vein >= 0, cell.revealedAt > 0, cell.revealedAt <= Moment.now, let category = model.categories.first(where: { $0.vein == cell.vein }) {
             focusStratum = nil
             model.hoveredVein = cell.vein
-            hover = FieldHover(location: location, swatch: theme.amber.color(), title: category.name,
+            hover = FieldHover(location: location, swatch: theme.accent.color(), title: category.name,
                                detail: ByteText.string(model.picked(category)))
         } else if cell.stratum >= 0, cell.stratum < model.field.strata.count {
             let stratum = model.field.strata[cell.stratum]
@@ -110,13 +111,13 @@ private struct DigHero: View {
             case .idle:
                 ByteFigure(free, word: "free")
             case .digging:
-                ByteFigure(model.found, word: "found", amber: true)
+                ByteFigure(model.found, word: "found", accent: true)
                     .animation(.easeOut(duration: 0.6), value: model.found)
             case .ready:
-                ByteFigure(model.selectedTotal, word: "to clear", amber: true)
+                ByteFigure(model.selectedTotal, word: "to clear", accent: true)
                     .animation(.easeOut(duration: 0.4), value: model.selectedTotal)
             case .clearing:
-                ByteFigure(model.remaining, word: "to clear", amber: true)
+                ByteFigure(model.remaining, word: "to clear", accent: true)
                     .animation(.easeOut(duration: 1.3), value: model.remaining)
             case .done:
                 CountingFigure(from: model.freeBefore, to: free, word: "free")
@@ -124,10 +125,10 @@ private struct DigHero: View {
                     Text("+\(ByteText.string(model.cleared))")
                         .font(.system(size: 12.5, weight: .semibold))
                         .monospacedDigit()
-                        .foregroundStyle(Palette.amberText)
+                        .foregroundStyle(Palette.accentText)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
-                        .background(Capsule().fill(Palette.amber.opacity(0.2)))
+                        .background(Capsule().fill(Palette.accent.opacity(0.2)))
                         .transition(.scale(scale: 0.8).combined(with: .opacity))
                 }
             }
@@ -183,9 +184,9 @@ private struct DigCapsule: View {
                 } label: {
                     Image(systemName: model.includeSystem ? "lock.open.fill" : "lock.fill")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(model.includeSystem ? AnyShapeStyle(Palette.amberText) : AnyShapeStyle(.tertiary))
+                        .foregroundStyle(model.includeSystem ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.tertiary))
                         .frame(width: 40, height: 40)
-                        .background(Circle().fill(model.includeSystem ? Palette.amber.opacity(0.16) : .clear))
+                        .background(Circle().fill(Palette.accent.opacity(model.includeSystem ? 0.16 : 0)))
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -200,7 +201,7 @@ private struct DigCapsule: View {
                     .padding(.leading, 2)
                     .padding(.trailing, 8)
                 }
-                .buttonStyle(AmberButtonStyle())
+                .buttonStyle(AccentButtonStyle())
                 .keyboardShortcut(.defaultAction)
                 .disabled(!app.canStart(.dig))
                 .help(app.canStart(.dig) ? "Scans only. Nothing is removed until you press Clear." : "Another task is still running")
@@ -216,7 +217,7 @@ private struct DigCapsule: View {
                     Label("Clear \(ByteText.string(model.selectedTotal))", systemImage: "sparkles")
                         .contentTransition(.numericText(value: Double(model.selectedTotal)))
                 }
-                .buttonStyle(AmberButtonStyle())
+                .buttonStyle(AccentButtonStyle())
                 .disabled(model.selectedTotal == 0 || !app.canStart(.dig))
             case .clearing:
                 Ticker(text: model.job.stopping ? "Stopping after this step" : model.ticker)
@@ -229,7 +230,7 @@ private struct DigCapsule: View {
                 Button { app.section = .log } label: { Label("See log", systemImage: "clock") }
                     .buttonStyle(QuietButtonStyle())
                 Button("Done") { model.finish() }
-                    .buttonStyle(AmberButtonStyle())
+                    .buttonStyle(AccentButtonStyle())
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -352,7 +353,7 @@ private struct CategoryRow: View {
                     HStack(spacing: 11) {
                         Image(systemName: category.symbol)
                             .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(on ? AnyShapeStyle(Palette.amberText) : AnyShapeStyle(.tertiary))
+                            .foregroundStyle(on ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.tertiary))
                             .frame(width: 20)
                         VStack(alignment: .leading, spacing: 6) {
                             Text(category.name)
@@ -485,7 +486,7 @@ private struct NotesRow: View {
     let notes: [String]
 
     var body: some View {
-        DisclosureRow(symbol: "exclamationmark.circle", tint: Palette.amberText,
+        DisclosureRow(symbol: "exclamationmark.circle", tint: Palette.accentText,
                       title: notes.count == 1 ? "1 note from Mole" : "\(notes.count) notes from Mole") {
             ScrollView {
                 Text(notes.joined(separator: "\n"))

@@ -169,7 +169,7 @@ private struct LogRow: View {
                     HStack(spacing: 6) {
                         Text(entry.title).font(.system(size: 13, weight: .medium)).lineLimit(1)
                         if entry.kept > 0 {
-                            Text("\(entry.kept) kept").font(.system(size: 12)).foregroundStyle(Palette.amberText)
+                            Text("\(entry.kept) kept").font(.system(size: 12)).foregroundStyle(Palette.accentText)
                         }
                         if entry.failed > 0 {
                             Text("\(entry.failed) failed").font(.system(size: 12)).foregroundStyle(Palette.danger)
@@ -270,9 +270,10 @@ private struct Pellets: View {
     let count: Int
     let partial: Bool
     let done: Bool
+    @Environment(\.accent) private var accent
 
     var body: some View {
-        let color = done ? Palette.ok : Palette.amber
+        let color = (done ? accent.done : accent.fill).color
         FlowLayout(spacing: 3) {
             ForEach(0..<count, id: \.self) { _ in
                 Circle().fill(color).frame(width: 5, height: 5).shadow(color: done ? .clear : color.opacity(0.55), radius: 3)
