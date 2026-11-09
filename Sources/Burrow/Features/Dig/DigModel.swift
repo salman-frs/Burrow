@@ -47,7 +47,32 @@ struct DigCategory: Identifiable, Equatable {
 @MainActor
 @Observable
 final class DigModel {
-    enum Phase { case idle, digging, ready, clearing, done }
+    enum Phase: Equatable {
+        case idle
+        case digging(stopping: Bool)
+        case ready
+        /// The step is nil before the first removal starts and after the last one ends.
+        case clearing(DigCategory.Kind?, stopping: Bool)
+        case done
+
+        var isDigging: Bool {
+            if case .digging = self { true } else { false }
+        }
+
+        var isWorking: Bool {
+            switch self {
+            case .digging, .clearing: true
+            case .idle, .ready, .done: false
+            }
+        }
+
+        var isStopping: Bool {
+            switch self {
+            case .digging(let stopping), .clearing(_, let stopping): stopping
+            case .idle, .ready, .done: false
+            }
+        }
+    }
 
     private(set) var phase: Phase = .idle
     var includeSystem = false
@@ -62,13 +87,11 @@ final class DigModel {
     private(set) var cleared: Int64 = 0
     private(set) var remaining: Int64 = 0
     private(set) var freeBefore: Int64 = 0
-    private(set) var clearing: DigCategory.Kind?
     var hoveredVein: Int?
     private var installerFiles: [InstallerFile] = []
     private var artifacts: [PathEntry] = []
     let field = DotField(top: 132, seed: 23)
     let job = MoleJob()
-    private var stopped = false
     private var pendingLayers = false
     private weak var app: AppModel?
 
@@ -93,7 +116,7 @@ final class DigModel {
 
     /// Picks are fixed once Clear starts. Keep writes Mole's protected list, so it waits for the full preview.
     func canEdit(_ category: DigCategory) -> Bool {
-        phase == .ready || (phase == .digging && category.isPickable)
+        phase == .ready || (phase.isDigging && category.isPickable)
     }
 
     // MARK: Field
@@ -129,7 +152,7 @@ final class DigModel {
     // MARK: Digging
 
     func dig() async {
-        guard let app, let runner = app.runner, phase != .digging, phase != .clearing, app.begin(.dig) else { return }
+        guard let app, let runner = app.runner, !phase.isWorking, app.begin(.dig) else { return }
         defer { app.end(.dig) }
         if phase == .done || pendingLayers { applyLayers(animated: false) } else { field.layout(field.strata, total: field.total) }
         categories = []
@@ -140,19 +163,22 @@ final class DigModel {
         clearNotes = []
         cachesIncluded = true
         cachesClearable = true
-        stopped = false
         ticker = "Starting"
-        phase = .digging
+        phase = .digging(stopping: false)
         let bounds = digBounds
         field.startDigging(from: bounds.min, to: bounds.max, start: Moment.now)
 
         let declined = await scanCaches(with: runner, app: app)
-        if !stopped && !declined { await scanInstallers(with: runner) }
-        if !stopped && !declined { await scanProjects(with: runner) }
+        if !phase.isStopping && !declined { await scanInstallers(with: runner) }
+        if !phase.isStopping && !declined { await scanProjects(with: runner) }
         field.stopDigging()
 
         if declined || categories.isEmpty && review.isEmpty {
-            if !declined { app.notify("Nothing to clear. Your Mac is tidy.", symbol: "sparkles") }
+            if phase.isStopping {
+                app.notify("Dig stopped", symbol: "stop.circle.fill", warning: true)
+            } else if !declined {
+                app.notify("Nothing to clear. Your Mac is tidy.", symbol: "sparkles")
+            }
             phase = .idle
             applyLayers(animated: true)
             return
@@ -163,7 +189,11 @@ final class DigModel {
     }
 
     func stop() {
-        stopped = true
+        switch phase {
+        case .digging: phase = .digging(stopping: true)
+        case .clearing(let step, _): phase = .clearing(step, stopping: true)
+        case .idle, .ready, .done: return
+        }
         job.stop()
     }
 
@@ -171,7 +201,7 @@ final class DigModel {
     private func scanCaches(with runner: MoleRunner, app: AppModel) async -> Bool {
         var streamed = ""
         var announced: Set<String> = []
-        await job.run(["clean", "--dry-run"], with: runner, options: adminOptions(app)) { [weak self] line in
+        let outcome = await job.run(["clean", "--dry-run"], with: runner, options: adminOptions(app)) { [weak self] line in
             guard let self else { return }
             streamed += line + "\n"
             if let text = Self.tickerText(line) { self.ticker = text }
@@ -181,10 +211,14 @@ final class DigModel {
                 self.discover(cache: section)
             }
         }
-        if let error = job.failure, error.isAdminDeclined { return true }
-        if job.failure != nil || job.stopping {
+        switch outcome {
+        case .failed(let error) where error.isAdminDeclined:
+            return true
+        case .failed, .stopped:
             cachesClearable = false
             scanNotes.append("The cache scan didn't finish, so caches are left alone. Dig again to include them.")
+        case .completed, .exited:
+            break
         }
         let report = MoleReportParser.parse(job.text)
         for section in report.cleanableSections where !announced.contains(section.title) {
@@ -306,7 +340,6 @@ final class DigModel {
         guard phase == .ready, selectedTotal > 0, let app, let runner = app.runner, app.begin(.dig) else { return }
         defer { app.end(.dig) }
         hoveredVein = nil
-        stopped = false
         let picks = Dictionary(uniqueKeysWithValues: categories.map { ($0.vein, picked($0)) })
         let installerIDs = pickedIDs(.installers)
         let artifactIDs = pickedIDs(.projects)
@@ -315,41 +348,45 @@ final class DigModel {
         remaining = picks.values.reduce(0, +)
         cleared = 0
         clearNotes = []
-        phase = .clearing
+        phase = .clearing(nil, stopping: false)
         field.setContinuous(true)
         var rank = 0
 
         if cacheCategories.contains(where: { picks[$0.vein, default: 0] > 0 }) {
-            clearing = .cache
-            await job.run(["clean"], with: runner, options: adminOptions(app)) { [weak self] line in
+            phase = .clearing(.cache, stopping: false)
+            let outcome = await job.run(["clean"], with: runner, options: adminOptions(app)) { [weak self] line in
                 if let text = Self.tickerText(line) { self?.ticker = text }
             }
             let report = MoleReportParser.parse(job.text)
-            if let error = job.failure {
-                clearNotes.append(error.localizedDescription)
-            } else if job.exitCode == 0 && !job.stopping {
+            let keptByMole = report.summary + report.rows.filter { $0.status == .attention || $0.status == .failed }.map(\.title)
+            switch outcome {
+            case .completed:
                 release(.cache, picks: picks, rank: &rank)
-            } else {
-                if job.stopping { clearNotes.append("Stopped before Mole finished. Some caches may already be cleared.") }
-                clearNotes += report.summary + report.rows.filter { $0.status == .attention || $0.status == .failed }.map(\.title)
-                if clearNotes.isEmpty { clearNotes.append("Mole stopped with exit code \(job.exitCode ?? -1). Some caches may already be cleared.") }
+            case .failed(let error):
+                clearNotes.append(error.localizedDescription)
+            case .stopped:
+                clearNotes.append("Stopped before Mole finished. Some caches may already be cleared.")
+                clearNotes += keptByMole
+            case .exited(let code):
+                clearNotes += keptByMole
+                if clearNotes.isEmpty { clearNotes.append("Mole stopped with exit code \(code). Some caches may already be cleared.") }
             }
         }
         let pickedInstallers = installerFiles.filter { installerIDs.contains($0.id) }
-        if !stopped, !pickedInstallers.isEmpty {
-            clearing = .installers
+        if !phase.isStopping, !pickedInstallers.isEmpty {
+            phase = .clearing(.installers, stopping: false)
             ticker = "Installers"
             await removal(.installers, picks: picks, rank: &rank) { try await InstallerWorkflow.remove(pickedInstallers, with: runner) }
         }
         let pickedArtifacts = artifacts.filter { artifactIDs.contains($0.id) }
-        if !stopped, !pickedArtifacts.isEmpty {
-            clearing = .projects
+        if !phase.isStopping, !pickedArtifacts.isEmpty {
+            phase = .clearing(.projects, stopping: false)
             ticker = "Build leftovers"
             await removal(.projects, picks: picks, rank: &rank, removedAll: { _ in
                 pickedArtifacts.allSatisfy { !FileManager.default.fileExists(atPath: $0.path) }
             }) { try await PurgeWorkflow.remove(pickedArtifacts, with: runner) }
         }
-        clearing = nil
+        phase = .clearing(nil, stopping: phase.isStopping)
         field.setContinuous(false)
         try? await Task.sleep(for: .seconds(0.35))
         field.settle()

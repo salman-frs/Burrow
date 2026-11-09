@@ -81,13 +81,13 @@ struct SettingsSheet: View {
                 }
                 Spacer()
                 Toggle("Use Touch ID for admin tasks", isOn: Binding(
-                    get: { model.touchID == .enabled },
+                    get: { model.touchID.isOn },
                     set: { enabled in Task { await model.setTouchID(enabled: enabled) } }
                 ))
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .tint(Palette.accent)
-                .disabled(model.touchID == .unknown || model.touchIDBusy)
+                .disabled(!model.touchID.canSwitch)
             }
             .padding(.top, 14)
             .padding(.bottom, 4)

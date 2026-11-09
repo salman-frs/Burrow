@@ -4,12 +4,11 @@ import SwiftUI
 @MainActor
 @Observable
 final class TuneUpModel {
-    enum Phase { case idle, checking, ready, running, finished }
+    enum Phase: Equatable { case idle, checking, unavailable(String), ready, running, finished }
 
     private(set) var phase: Phase = .idle
     private(set) var plan = MoleReport()
     private(set) var progress = MoleReport()
-    private(set) var failure: String?
     let job = MoleJob()
     private weak var app: AppModel?
 
@@ -22,31 +21,31 @@ final class TuneUpModel {
         switch phase {
         case .running: progress.progress(of: task, finished: false)
         case .finished: progress.progress(of: task, finished: true)
-        case .idle, .checking, .ready: .pending
+        case .idle, .checking, .unavailable, .ready: .pending
         }
     }
 
     func check() async {
-        guard let runner = app?.runner, phase == .idle else { return }
+        guard let runner = app?.runner else { return }
+        switch phase {
+        case .idle, .unavailable: break
+        case .checking, .ready, .running, .finished: return
+        }
         phase = .checking
-        failure = nil
-        await job.run(["optimize", "--dry-run"], with: runner)
+        let outcome = await job.run(["optimize", "--dry-run"], with: runner)
         if Task.isCancelled {
             phase = .idle
             return
         }
         let plan = MoleReportParser.parse(job.text)
-        if let error = job.failure {
-            failure = "Tune up could not check this Mac. \(error.localizedDescription)"
+        if case .failed(let error) = outcome {
+            phase = .unavailable("Tune up could not check this Mac. \(error.localizedDescription)")
         } else if plan.sections.isEmpty {
-            failure = job.lastMeaningfulLine ?? "Mole listed no tasks to run."
+            phase = .unavailable(job.lastMeaningfulLine ?? "Mole listed no tasks to run.")
+        } else {
+            self.plan = plan
+            phase = .ready
         }
-        guard failure == nil else {
-            phase = .idle
-            return
-        }
-        self.plan = plan
-        phase = .ready
     }
 
     /// Mole asks for administrator access itself and skips only the tasks that need it when you decline.
@@ -59,17 +58,18 @@ final class TuneUpModel {
         let options = SessionOptions(admin: app.admin.provider(
             reason: "Refreshing DNS, the network stack, Spotlight and permissions needs your Mac password. Cancel to run only the tasks that don't."
         ))
-        await job.run(["optimize"], with: runner, options: options) { [weak self] line in
+        let outcome = await job.run(["optimize"], with: runner, options: options) { [weak self] line in
             streamed += line + "\n"
             self?.progress = MoleReportParser.parse(streamed)
         }
         progress = MoleReportParser.parse(job.text)
         phase = .finished
-        if let error = job.failure {
+        switch outcome {
+        case .failed(let error):
             app.notify(error.localizedDescription, symbol: "exclamationmark.triangle.fill", warning: true)
-        } else if job.stopping {
+        case .stopped:
             app.notify("Tune up stopped", symbol: "stop.circle.fill", warning: true)
-        } else {
+        case .completed, .exited:
             let failed = tasks.filter { state(of: $0.title) == .failed }.count
             if failed > 0 {
                 app.notify(failed == 1 ? "Tune up finished. 1 task failed." : "Tune up finished. \(failed) tasks failed.",
@@ -136,12 +136,12 @@ private struct TuneUpPopover: View {
                 }
                 .padding(.horizontal, 4)
             }
-            if let failure = model.failure, model.phase == .idle {
+            if case .unavailable(let reason) = model.phase {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(Palette.accentText)
-                    Text(failure)
+                    Text(reason)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -172,7 +172,7 @@ private struct TuneUpPopover: View {
     @ViewBuilder
     private var action: some View {
         switch model.phase {
-        case .idle where model.failure != nil:
+        case .unavailable:
             Button { Task { await model.check() } } label: { Text("Try again").frame(maxWidth: .infinity) }
                 .buttonStyle(QuietButtonStyle(filled: true))
         case .idle, .checking:
@@ -187,9 +187,10 @@ private struct TuneUpPopover: View {
             .disabled(!app.canStart(.tuneUp))
             .help(app.canStart(.tuneUp) ? "" : "Another task is still running")
         case .running:
-            Button { model.stop() } label: { Text(model.job.stopping ? "Stopping" : "Stop").frame(maxWidth: .infinity) }
+            let stopping = model.job.state == .stopping
+            Button { model.stop() } label: { Text(stopping ? "Stopping" : "Stop").frame(maxWidth: .infinity) }
                 .buttonStyle(QuietButtonStyle(filled: true))
-                .disabled(model.job.stopping)
+                .disabled(stopping)
         case .finished:
             Button {
                 model.reset()

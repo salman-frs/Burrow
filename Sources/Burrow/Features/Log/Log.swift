@@ -16,9 +16,10 @@ struct LogEntry: Identifiable {
 @MainActor
 @Observable
 final class LogModel {
+    enum Status: Equatable { case notLoaded, loaded, failed(String) }
+
     private(set) var entries: [LogEntry] = []
-    private(set) var loaded = false
-    private(set) var failure: String?
+    private(set) var status = Status.notLoaded
     private var stale = true
     private weak var app: AppModel?
 
@@ -35,12 +36,11 @@ final class LogModel {
             let report = try MoleJSON.decode(HistoryReport.self, from: result.output)
             entries = Self.entries(from: report)
             stale = false
-            failure = nil
+            status = .loaded
         } catch {
             if Task.isCancelled { return }
-            failure = error.localizedDescription
+            status = .failed(error.localizedDescription)
         }
-        loaded = true
     }
 
     static func entries(from report: HistoryReport) -> [LogEntry] {
@@ -96,16 +96,19 @@ struct LogView: View {
             VStack(alignment: .leading, spacing: 0) {
                 ByteFigure(model.total, word: "cleared")
                     .animation(.easeOut(duration: 0.8), value: model.total)
-                    .opacity(model.loaded ? 1 : 0)
-                    .animation(.easeOut(duration: 0.3), value: model.loaded)
-                if !model.loaded {
-                    Spinner(size: 20).padding(.top, 34)
-                } else if let failure = model.failure, model.entries.isEmpty {
-                    Text(failure).foregroundStyle(.secondary).padding(.top, 34)
-                } else if model.loaded && model.entries.isEmpty {
-                    Text("Nothing yet. What you clear shows up here.")
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, 34)
+                    .opacity(model.status == .notLoaded ? 0 : 1)
+                    .animation(.easeOut(duration: 0.3), value: model.status == .notLoaded)
+                if model.entries.isEmpty {
+                    switch model.status {
+                    case .notLoaded:
+                        Spinner(size: 20).padding(.top, 34)
+                    case .failed(let reason):
+                        Text(reason).foregroundStyle(.secondary).padding(.top, 34)
+                    case .loaded:
+                        Text("Nothing yet. What you clear shows up here.")
+                            .foregroundStyle(.tertiary)
+                            .padding(.top, 34)
+                    }
                 }
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(months(model.entries), id: \.title) { month in

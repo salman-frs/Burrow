@@ -37,6 +37,7 @@ final class SpaceModel {
     var current: Crumb { trail[trail.count - 1] }
     var diskName: String { app?.disk.name ?? "" }
     var atRoot: Bool { current.path == nil }
+    var measuring: Bool { loadingPath != nil || atRoot && app?.disk.isMeasuring == true }
     var report: DiskReport? { current.path.flatMap { reports[$0] } }
 
     /// Deepest first, as the field stacks them: macOS at the bottom of the disk, the largest folder at the bottom of a folder.

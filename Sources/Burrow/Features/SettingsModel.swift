@@ -5,12 +5,31 @@ import Observation
 @MainActor
 @Observable
 final class SettingsModel {
+    enum TouchID: Equatable {
+        case unknown, on, off
+        case switching(on: Bool)
+
+        var isOn: Bool { self == .on || self == .switching(on: true) }
+        var canSwitch: Bool { self == .on || self == .off }
+
+        var isSwitching: Bool {
+            if case .switching = self { true } else { false }
+        }
+
+        init(_ state: TouchIDState) {
+            switch state {
+            case .enabled: self = .on
+            case .disabled: self = .off
+            case .unknown: self = .unknown
+            }
+        }
+    }
+
     private(set) var protectedPaths: [String] = []
     private(set) var moleDefaults: [String] = []
     private(set) var usingMoleDefaults = true
     private(set) var projectFolders: [String] = []
-    private(set) var touchID: TouchIDState = .unknown
-    private(set) var touchIDBusy = false
+    private(set) var touchID: TouchID = .unknown
     private(set) var failure: String?
     private weak var app: AppModel?
 
@@ -73,24 +92,28 @@ final class SettingsModel {
     }
 
     func refreshTouchID() async {
-        guard let runner = app?.runner else { return }
-        touchID = await TouchIDWorkflow.state(with: runner)
+        guard let runner = app?.runner, !touchID.isSwitching else { return }
+        let state = await TouchIDWorkflow.state(with: runner)
+        if !touchID.isSwitching { touchID = TouchID(state) }
     }
 
     func setTouchID(enabled: Bool) async {
-        guard let app, let runner = app.runner, !touchIDBusy else { return }
-        touchIDBusy = true
+        guard let app, let runner = app.runner, touchID.canSwitch else { return }
+        touchID = .switching(on: enabled)
         let options = SessionOptions(admin: app.admin.provider(
             reason: enabled ? "Turning on Touch ID for administrator tasks changes /etc/pam.d/sudo_local."
                 : "Turning off Touch ID for administrator tasks changes /etc/pam.d/sudo_local."
         ))
         let job = MoleJob()
-        await job.run(["touchid", enabled ? "enable" : "disable"], with: runner, options: options)
-        if let error = job.failure ?? (job.exitCode == 0 ? nil : SettingsError.mole(job.lastMeaningfulLine ?? "Mole reported an error.")) {
+        switch await job.run(["touchid", enabled ? "enable" : "disable"], with: runner, options: options) {
+        case .completed:
+            break
+        case .failed(let error):
             failure = error.localizedDescription
+        case .exited, .stopped:
+            failure = job.lastMeaningfulLine ?? "Mole reported an error."
         }
-        await refreshTouchID()
-        touchIDBusy = false
+        touchID = TouchID(await TouchIDWorkflow.state(with: runner))
     }
 
     private func perform(_ change: () throws -> Void) {
@@ -105,11 +128,10 @@ final class SettingsModel {
 
 enum SettingsError: LocalizedError {
     case invalid(String)
-    case mole(String)
 
     var errorDescription: String? {
         switch self {
-        case .invalid(let reason), .mole(let reason): reason
+        case .invalid(let reason): reason
         }
     }
 }

@@ -5,11 +5,18 @@ import Observation
 @MainActor
 @Observable
 final class MoleJob {
+    enum State { case idle, running, stopping }
+
+    /// A stop wins over the exit code: Mole may still exit cleanly after skipping the rest of its steps.
+    enum Outcome {
+        case completed
+        case exited(Int32)
+        case stopped
+        case failed(Error)
+    }
+
+    private(set) var state = State.idle
     private(set) var lines: [String] = []
-    private(set) var isRunning = false
-    private(set) var exitCode: Int32?
-    private(set) var failure: Error?
-    private(set) var stopping = false
     private var control = RunControl()
 
     var text: String { lines.joined(separator: "\n") }
@@ -18,15 +25,15 @@ final class MoleJob {
         lines.last { !$0.trimmingCharacters(in: .whitespaces).isEmpty && !$0.hasPrefix("=") }
     }
 
+    @discardableResult
     func run(_ arguments: [String], with runner: MoleRunner, options: SessionOptions = SessionOptions(),
-             onLine: ((String) -> Void)? = nil) async {
+             onLine: ((String) -> Void)? = nil) async -> Outcome {
         lines = []
-        exitCode = nil
-        failure = nil
-        stopping = false
-        isRunning = true
+        state = .running
         let control = RunControl()
         self.control = control
+        var exitCode: Int32 = 0
+        var failure: Error?
         do {
             for try await event in runner.run(arguments, options: options, control: control) {
                 switch event {
@@ -40,14 +47,18 @@ final class MoleJob {
         } catch {
             failure = error
         }
-        isRunning = false
+        let stopped = state == .stopping
+        state = .idle
+        if let failure { return .failed(failure) }
+        if stopped { return .stopped }
+        return exitCode == 0 ? .completed : .exited(exitCode)
     }
 
     /// Asks Mole to stop; `run` keeps waiting until Mole has really exited, so the
     /// one-change-at-a-time rule holds while it winds down.
     func stop() {
-        guard isRunning else { return }
-        stopping = true
+        guard state == .running else { return }
+        state = .stopping
         control.interrupt()
     }
 }

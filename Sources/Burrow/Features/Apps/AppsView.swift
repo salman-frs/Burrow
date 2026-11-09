@@ -98,12 +98,15 @@ private struct AppGrid: View {
     var body: some View {
         if model.apps.isEmpty {
             Group {
-                if let failure = model.failure {
+                switch model.listing {
+                case .failed(let reason):
                     VStack(spacing: 12) {
-                        Text(failure).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        Text(reason).foregroundStyle(.secondary).multilineTextAlignment(.center)
                         Button("Try again") { Task { await model.load() } }.buttonStyle(QuietButtonStyle(filled: true))
                     }
-                } else {
+                case .loaded:
+                    Text("No apps to uninstall").foregroundStyle(.secondary)
+                case .notLoaded, .loading:
                     Spinner(size: 22)
                 }
             }

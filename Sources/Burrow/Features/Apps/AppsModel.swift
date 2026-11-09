@@ -7,6 +7,24 @@ import Observation
 @Observable
 final class AppsModel {
     enum Order: CaseIterable { case largest, name, slimmable }
+    enum Listing: Equatable { case notLoaded, loading, loaded, failed(String) }
+
+    enum PlanState {
+        case nothingSelected
+        case planning
+        case planned(PlannedRemoval)
+        case failed(String)
+    }
+
+    enum Removal: Equatable { case idle, uninstalling, leaving(Set<String>) }
+
+    struct PlannedRemoval {
+        let plan: UninstallPlan
+        let paths: [FootprintPart: [String]]
+        let parts: [FootprintPart: Int64]
+        let personalPaths: [String]
+        let personalBytes: Int64
+    }
 
     private(set) var apps: [InstalledApp] = []
     private(set) var names: [String: String] = [:]
@@ -14,22 +32,14 @@ final class AppsModel {
     /// Intel code Mole can strip, keyed by app path.
     private(set) var slimmable: [String: Int64] = [:]
     private(set) var slimmableChecked = false
-    private(set) var loading = false
-    private(set) var failure: String?
+    private(set) var listing = Listing.notLoaded
     var search = ""
     var order: Order = .largest
     private(set) var selection: Set<String> = []
     private(set) var includePersonalData = false
 
-    private(set) var plan: UninstallPlan?
-    private(set) var planning = false
-    private(set) var planProblem: String?
-    private(set) var paths: [FootprintPart: [String]] = [:]
-    private(set) var parts: [FootprintPart: Int64] = [:]
-    private(set) var personalPaths: [String] = []
-    private(set) var personalBytes: Int64 = 0
-    private(set) var leaving: Set<String> = []
-    private(set) var uninstalling = false
+    private(set) var planState = PlanState.nothingSelected
+    private(set) var removal = Removal.idle
     let footprint = DotField(pitch: 7, radius: 2, seed: 5, drawsAir: false)
     private var planTask: Task<Void, Never>?
     private weak var app: AppModel?
@@ -58,9 +68,8 @@ final class AppsModel {
     }
 
     func load() async {
-        guard let runner = app?.runner, !loading else { return }
-        loading = true
-        failure = nil
+        guard let runner = app?.runner, listing != .loading else { return }
+        listing = .loading
         do {
             apps = try await UninstallWorkflow.installedApps(with: runner)
             for app in apps where names[app.path] == nil {
@@ -71,10 +80,10 @@ final class AppsModel {
                 selection.formIntersection(installed)
                 selectionChanged()
             }
+            listing = .loaded
         } catch {
-            if !Task.isCancelled { failure = error.localizedDescription }
+            listing = Task.isCancelled ? .notLoaded : .failed(error.localizedDescription)
         }
-        loading = false
         await measure()
         await findSlimmable(with: runner)
     }
@@ -129,11 +138,29 @@ final class AppsModel {
         selectionChanged()
     }
 
+    var uninstalling: Bool { removal != .idle }
+
+    var leaving: Set<String> {
+        if case .leaving(let paths) = removal { paths } else { [] }
+    }
+
     var slimBytes: Int64 { selectedApps.compactMap { slimmable[$0.path] }.reduce(0, +) }
+
+    private var planned: PlannedRemoval? {
+        if case .planned(let planned) = planState { planned } else { nil }
+    }
+
+    var planning: Bool {
+        if case .planning = planState { true } else { false }
+    }
+
+    var paths: [FootprintPart: [String]] { planned?.paths ?? [:] }
+    var personalPaths: [String] { planned?.personalPaths ?? [] }
+    var personalBytes: Int64 { planned?.personalBytes ?? 0 }
 
     /// Until Mole's plan arrives, only the app bundles are known.
     func bytes(of part: FootprintPart) -> Int64 {
-        parts[part] ?? (part == .app ? selectedApps.compactMap { sizes[$0.path] }.reduce(0, +) : 0)
+        planned?.parts[part] ?? (part == .app ? selectedApps.compactMap { sizes[$0.path] }.reduce(0, +) : 0)
     }
 
     var footprintTotal: Int64 {
@@ -142,21 +169,23 @@ final class AppsModel {
 
     /// The plan must name the exact bundles that were picked; anything else stays unconfirmable.
     var planCoversSelection: Bool {
-        guard let plan, plan.apps.count == selection.count else { return false }
+        guard let plan = planned?.plan, plan.apps.count == selection.count else { return false }
         return selectedApps.allSatisfy { app in plan.apps.contains { $0.files.contains(app.path) } }
     }
 
-    var runningApps: [String] { plan?.apps.filter(\.isRunning).map(\.name) ?? [] }
+    var runningApps: [String] { planned?.plan.apps.filter(\.isRunning).map(\.name) ?? [] }
+
+    var planProblem: String? {
+        switch planState {
+        case .failed(let reason): reason
+        case .planned where !planCoversSelection: "Mole's plan does not match the apps you picked, so Burrow won't uninstall them."
+        case .nothingSelected, .planning, .planned: nil
+        }
+    }
 
     private func selectionChanged() {
         planTask?.cancel()
-        plan = nil
-        planProblem = nil
-        paths = [:]
-        parts = [:]
-        personalPaths = []
-        personalBytes = 0
-        planning = !selection.isEmpty
+        planState = selection.isEmpty ? .nothingSelected : .planning
         layoutFootprint(animate: true)
         guard !selection.isEmpty else { return }
         planTask = Task { [weak self] in
@@ -171,8 +200,7 @@ final class AppsModel {
         let targets = selectedApps
         let unclear = UninstallWorkflow.ambiguous(targets, among: apps)
         guard unclear.isEmpty else {
-            planProblem = "Another app shares the name of \(unclear.map(name(of:)).joined(separator: ", ")). Uninstall it from Terminal with mo uninstall."
-            planning = false
+            planState = .failed("Another app shares the name of \(unclear.map(name(of:)).joined(separator: ", ")). Uninstall it from Terminal with mo uninstall.")
             return
         }
         let withData = includePersonalData
@@ -185,20 +213,19 @@ final class AppsModel {
                 Dictionary((files + personal).map { ($0, DirectorySize.allocated(at: URL(fileURLWithPath: $0))) }, uniquingKeysWith: max)
             }.value
             guard !Task.isCancelled else { return }
-            self.plan = plan
-            paths = Dictionary(grouping: files, by: FootprintPart.of)
-            parts = paths.mapValues { $0.map { measured[$0] ?? 0 }.reduce(0, +) }
-            personalPaths = personal
-            personalBytes = personal.map { measured[$0] ?? 0 }.reduce(0, +)
-            if !planCoversSelection {
-                planProblem = "Mole's plan does not match the apps you picked, so Burrow won't uninstall them."
-            }
+            let paths = Dictionary(grouping: files, by: FootprintPart.of)
+            planState = .planned(PlannedRemoval(
+                plan: plan,
+                paths: paths,
+                parts: paths.mapValues { $0.map { measured[$0] ?? 0 }.reduce(0, +) },
+                personalPaths: personal,
+                personalBytes: personal.map { measured[$0] ?? 0 }.reduce(0, +)
+            ))
             layoutFootprint(animate: true)
         } catch {
             guard !Task.isCancelled else { return }
-            planProblem = error.localizedDescription
+            planState = .failed(error.localizedDescription)
         }
-        planning = false
     }
 
     func footprintResized(to size: CGSize) {
@@ -218,22 +245,21 @@ final class AppsModel {
 
     func uninstall() async {
         guard let app, let runner = app.runner, planCoversSelection, !uninstalling, app.begin(.uninstall) else { return }
-        defer { app.end(.uninstall) }
         let targets = selectedApps
         let label = selectionLabel
         let total = footprintTotal
-        uninstalling = true
+        removal = .uninstalling
         do {
             let outcome = try await UninstallWorkflow.uninstall(
                 targets, among: apps, withData: includePersonalData, with: runner,
                 admin: app.admin.provider(reason: "Removing \(label) needs your Mac password.")
             )
             if outcome.succeeded {
-                leaving = Set(targets.map(\.path))
+                let removed = Set(targets.map(\.path))
+                removal = .leaving(removed)
                 try? await Task.sleep(for: .seconds(0.4))
-                apps.removeAll { leaving.contains($0.path) }
-                for path in leaving { sizes[path] = nil }
-                leaving = []
+                apps.removeAll { removed.contains($0.path) }
+                for path in removed { sizes[path] = nil }
                 selection = []
                 includePersonalData = false
                 selectionChanged()
@@ -245,7 +271,8 @@ final class AppsModel {
         } catch {
             app.notify(error.localizedDescription, symbol: "exclamationmark.triangle.fill", warning: true)
         }
-        uninstalling = false
+        removal = .idle
+        app.end(.uninstall)
         await load()
     }
 

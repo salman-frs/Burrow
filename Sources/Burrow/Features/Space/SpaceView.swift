@@ -99,7 +99,7 @@ private struct Crumbs: View {
                 Button(crumb.path == nil ? model.diskName : crumb.name) { Task { await model.go(to: index) } }
                     .buttonStyle(CrumbStyle(current: index == model.trail.count - 1))
             }
-            if model.loadingPath != nil {
+            if model.measuring {
                 Spinner(size: 13).padding(.leading, 6)
             }
             Button { model.chooseFolder() } label: { Image(systemName: "folder.badge.plus") }
@@ -111,7 +111,7 @@ private struct Crumbs: View {
                 .buttonStyle(IconButtonStyle())
                 .help("Measure again")
                 .accessibilityLabel("Measure again")
-                .disabled(model.loadingPath != nil)
+                .disabled(model.measuring)
         }
         .padding(.leading, -10)
     }
