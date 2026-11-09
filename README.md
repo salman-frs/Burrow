@@ -7,7 +7,7 @@
 
 Take back your Mac's disk. Burrow finds what's eating your space, clears it safely, and removes apps along with everything they leave behind. Native, open source, free.
 
-![Burrow](docs/dig.png)
+https://github.com/user-attachments/assets/303ce1db-5c9b-4fbf-8b2d-81b335dabedd
 
 - **Dig**: one scan for caches, old installers and build leftovers. Review, uncheck what you want to keep, clear.
 - **Apps**: uninstall an app with its data, caches and settings. Strip Intel code from apps that still carry it.
