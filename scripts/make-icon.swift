@@ -1,6 +1,7 @@
-// Draws Burrow's icon: earth strata in the module minerals under a night sky.
+// Draws Burrow's icon: a lowercase b dug as a shaft through the top of a block of earth.
 // Usage: swift scripts/make-icon.swift <output.iconset>
 import AppKit
+import SwiftUI
 
 let output = URL(fileURLWithPath: CommandLine.arguments[1])
 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -10,44 +11,55 @@ func color(_ hex: UInt32) -> NSColor {
             blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
 }
 
-let minerals: [UInt32] = [0x2FA37A, 0x3E9C8F, 0x3D6FD6, 0x8B6BD9, 0xD9A82E, 0xB8455A]
+let night = color(0x1F2D4C)
+let moon = color(0xEFE6D2)
+
+/// The b on the logo's 256-unit grid, where the block spans 16...240 and y grows downward.
+struct Shaft {
+    let width: CGFloat
+    let bowlRadius: CGFloat
+    let bowlCenter: CGPoint
+    let chamberRadius: CGFloat
+
+    static let regular = Shaft(width: 28, bowlRadius: 60, bowlCenter: CGPoint(x: 136, y: 136), chamberRadius: 32)
+    static let small = Shaft(width: 32, bowlRadius: 64, bowlCenter: CGPoint(x: 128, y: 144), chamberRadius: 32)
+}
 
 func render(size: Int) -> Data {
+    let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: size, bitsPerSample: 8,
+                                  samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                  colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        .retagging(with: .sRGB)!
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+
     let pixels = CGFloat(size)
-    let image = NSImage(size: NSSize(width: pixels, height: pixels))
-    image.lockFocus()
     let inset = pixels * 0.1
     let body = NSRect(x: inset, y: inset, width: pixels - inset * 2, height: pixels - inset * 2)
-    let shape = NSBezierPath(roundedRect: body, xRadius: body.width * 0.225, yRadius: body.width * 0.225)
-    NSGraphicsContext.current?.saveGraphicsState()
-    shape.addClip()
-
-    NSGradient(starting: color(0x1E2433), ending: color(0x2C3550))?.draw(in: body, angle: 90)
-
-    let bandHeight = body.height * 0.095
-    for (index, hex) in minerals.enumerated() {
-        let top = body.minY + body.height * 0.58 - CGFloat(index) * bandHeight
-        let path = NSBezierPath()
-        path.move(to: NSPoint(x: body.minX, y: top))
-        path.curve(to: NSPoint(x: body.maxX, y: top - bandHeight * 0.35),
-                   controlPoint1: NSPoint(x: body.minX + body.width * 0.35, y: top + bandHeight * 0.55),
-                   controlPoint2: NSPoint(x: body.minX + body.width * 0.62, y: top - bandHeight * 0.9))
-        path.line(to: NSPoint(x: body.maxX, y: body.minY))
-        path.line(to: NSPoint(x: body.minX, y: body.minY))
-        path.close()
-        color(hex).withAlphaComponent(1 - CGFloat(index) * 0.06).setFill()
-        path.fill()
+    let unit = body.width / 224
+    func point(_ x: CGFloat, _ y: CGFloat) -> NSPoint {
+        NSPoint(x: body.minX + (x - 16) * unit, y: body.maxY - (y - 16) * unit)
+    }
+    func disc(_ center: CGPoint, _ radius: CGFloat) -> NSBezierPath {
+        let middle = point(center.x, center.y)
+        let r = radius * unit
+        return NSBezierPath(ovalIn: NSRect(x: middle.x - r, y: middle.y - r, width: r * 2, height: r * 2))
     }
 
-    let hole = NSRect(x: body.midX - body.width * 0.09, y: body.minY + body.height * 0.56,
-                      width: body.width * 0.18, height: body.width * 0.11)
-    color(0x141824).setFill()
-    NSBezierPath(ovalIn: hole).fill()
+    let squircle = RoundedRectangle(cornerRadius: body.width * 0.225, style: .continuous).path(in: body).cgPath
+    NSBezierPath(cgPath: squircle).addClip()
+    night.setFill()
+    body.fill()
 
-    NSGraphicsContext.current?.restoreGraphicsState()
-    image.unlockFocus()
+    let shaft = size <= 32 ? Shaft.small : Shaft.regular
+    let shaftBottom = point(shaft.bowlCenter.x - shaft.bowlRadius, shaft.bowlCenter.y)
+    moon.setFill()
+    NSRect(x: shaftBottom.x, y: shaftBottom.y, width: shaft.width * unit, height: pixels).fill()
+    disc(shaft.bowlCenter, shaft.bowlRadius).fill()
+    night.setFill()
+    disc(shaft.bowlCenter, shaft.chamberRadius).fill()
 
-    let bitmap = NSBitmapImageRep(data: image.tiffRepresentation!)!
+    NSGraphicsContext.restoreGraphicsState()
     return bitmap.representation(using: .png, properties: [:])!
 }
 

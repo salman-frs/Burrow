@@ -1,4 +1,9 @@
-# Burrow
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/burrow-dark.svg">
+    <img alt="Burrow" src="docs/logo/burrow-light.svg" width="280">
+  </picture>
+</h1>
 
 Take back your Mac's disk. Burrow finds what's eating your space, clears it safely, and removes apps along with everything they leave behind. Native, open source, free.
 
