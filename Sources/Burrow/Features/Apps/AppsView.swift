@@ -189,7 +189,7 @@ private struct AppTile: View {
                         if model.slimmable[installed.path] != nil {
                             Image(systemName: "scissors")
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(Palette.amberText)
+                                .foregroundStyle(Palette.accentText)
                                 .frame(width: 24, height: 24)
                                 .glass(Circle())
                                 .offset(x: 8, y: 2)
@@ -213,15 +213,15 @@ private struct AppTile: View {
             .background(background(selected: selected), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay {
                 if selected && scheme == .light {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.amber.opacity(0.55), lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.accent.opacity(0.55), lineWidth: 1.5)
                 }
             }
             .overlay(alignment: .topTrailing) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(Palette.amberInk)
+                    .foregroundStyle(Palette.onAccent)
                     .frame(width: 22, height: 22)
-                    .background(Circle().fill(Palette.amber))
+                    .background(Circle().fill(Palette.accent))
                     .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                     .scaleEffect(selected ? 1 : 0.01)
                     .opacity(selected ? 1 : 0)
@@ -251,9 +251,9 @@ private struct AppTile: View {
         return model.sizes[installed.path].map(ByteText.string) ?? "…"
     }
 
-    private func background(selected: Bool) -> Color {
-        if selected { return Palette.amber.opacity(scheme == .dark ? 0.14 : 0.09) }
-        return hovering ? Palette.hover : .clear
+    private func background(selected: Bool) -> AnyShapeStyle {
+        if selected { return AnyShapeStyle(Palette.accent.opacity(scheme == .dark ? 0.14 : 0.09)) }
+        return AnyShapeStyle(hovering ? Palette.hover : .clear)
     }
 }
 
@@ -296,7 +296,7 @@ private struct DropWell: View {
                 .frame(width: 120, height: 120)
                 .overlay {
                     RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .strokeBorder(targeted ? Palette.amber : Color.primary.opacity(0.18),
+                        .strokeBorder(targeted ? AnyShapeStyle(Palette.accent) : AnyShapeStyle(Color.primary.opacity(0.18)),
                                       style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
                 }
                 .scaleEffect(targeted ? 1.05 : 1)
@@ -312,10 +312,11 @@ private struct DropWell: View {
 private struct AppDetail: View {
     let model: AppsModel
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accent) private var accent
     @ViewState private var expanded: FootprintPart?
 
     var body: some View {
-        let theme = FieldTheme.of(scheme)
+        let theme = FieldTheme(scheme: scheme, accent: accent)
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: -26) {
                 ForEach(model.selectedApps.suffix(5)) { installed in
@@ -371,7 +372,7 @@ private struct AppDetail: View {
                     Label(model.uninstalling ? "Uninstalling" : "Uninstall \(model.selectionLabel)", systemImage: "trash")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(AmberButtonStyle())
+                .buttonStyle(AccentButtonStyle())
                 .disabled(!model.planCoversSelection || model.planning || model.uninstalling)
                 .help("Everything goes to the Trash, so you can put it back.")
             }
@@ -460,13 +461,13 @@ private struct Note: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 9) {
-            Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Palette.amberText)
+            Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Palette.accentText)
             Text(text).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .font(.system(size: 12.5))
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.amber.opacity(0.13), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Palette.accent.opacity(0.13), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }

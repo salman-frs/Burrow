@@ -279,7 +279,7 @@ extension FootprintPart {
         switch self {
         case .app: .ramp(2)
         case .data: .ramp(5)
-        case .caches: .amber
+        case .caches: .accent
         case .settings: .ramp(8)
         }
     }

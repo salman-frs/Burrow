@@ -5,12 +5,15 @@ import SwiftUI
 struct BurrowApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @ViewState private var model = AppModel()
+    @AppStorage(AccentPalette.storageKey) private var palette = AccentPalette.moonlight
 
     var body: some Scene {
         Window("Burrow", id: "main") {
             RootView()
                 .environment(model)
+                .environment(\.accent, palette.accent)
                 .frame(minWidth: 980, minHeight: 640)
+                .background(WindowChrome())
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1200, height: 780)

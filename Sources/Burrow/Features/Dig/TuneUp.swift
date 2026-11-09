@@ -99,7 +99,7 @@ struct TuneUpButton: View {
                 if app.tuneUp.phase == .running {
                     Spinner(size: 13)
                 } else {
-                    Image(systemName: "bolt.fill").foregroundStyle(Palette.amber)
+                    Image(systemName: "bolt.fill").foregroundStyle(Palette.accent)
                 }
                 Text(app.tuneUp.phase == .running ? "Tuning up" : "Tune up").font(.system(size: 13, weight: .medium))
             }
@@ -126,7 +126,7 @@ private struct TuneUpPopover: View {
         VStack(spacing: 10) {
             if let note = model.diagnosis.first {
                 HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Palette.amberText)
+                    Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Palette.accentText)
                     Text(note.title)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -140,7 +140,7 @@ private struct TuneUpPopover: View {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(Palette.amberText)
+                        .foregroundStyle(Palette.accentText)
                     Text(failure)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -177,13 +177,13 @@ private struct TuneUpPopover: View {
                 .buttonStyle(QuietButtonStyle(filled: true))
         case .idle, .checking:
             Button {} label: { Text("Run all").frame(maxWidth: .infinity) }
-                .buttonStyle(AmberButtonStyle())
+                .buttonStyle(AccentButtonStyle())
                 .disabled(true)
         case .ready:
             Button { Task { await model.run() } } label: {
                 Text("Run all \(model.tasks.count)").frame(maxWidth: .infinity)
             }
-            .buttonStyle(AmberButtonStyle())
+            .buttonStyle(AccentButtonStyle())
             .disabled(!app.canStart(.tuneUp))
             .help(app.canStart(.tuneUp) ? "" : "Another task is still running")
         case .running:
@@ -197,7 +197,7 @@ private struct TuneUpPopover: View {
             } label: {
                 Text("Done").frame(maxWidth: .infinity)
             }
-            .buttonStyle(AmberButtonStyle())
+            .buttonStyle(AccentButtonStyle())
         }
     }
 }
@@ -224,7 +224,7 @@ private struct TaskTile: View {
         .padding(.bottom, 11)
         .padding(.horizontal, 4)
         .frame(maxWidth: .infinity)
-        .background(state == .running ? Palette.amber.opacity(0.18) : Palette.hover,
+        .background(state == .running ? AnyShapeStyle(Palette.accent.opacity(0.18)) : AnyShapeStyle(Palette.hover),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(alignment: .topTrailing) {
             if let dot = dotColor {
@@ -237,8 +237,8 @@ private struct TaskTile: View {
 
     private var iconStyle: AnyShapeStyle {
         switch state {
-        case .running: AnyShapeStyle(Palette.amberText)
-        case .done: AnyShapeStyle(Palette.ok)
+        case .running: AnyShapeStyle(Palette.accentText)
+        case .done: AnyShapeStyle(Palette.done)
         case .failed: AnyShapeStyle(Palette.danger)
         case .pending, .skipped: AnyShapeStyle(.secondary)
         }
@@ -246,18 +246,18 @@ private struct TaskTile: View {
 
     private var labelStyle: AnyShapeStyle {
         switch state {
-        case .running: AnyShapeStyle(Palette.amberText)
+        case .running: AnyShapeStyle(Palette.accentText)
         case .done, .failed: AnyShapeStyle(.primary)
         case .pending: AnyShapeStyle(.secondary)
         case .skipped: AnyShapeStyle(.tertiary)
         }
     }
 
-    private var dotColor: Color? {
+    private var dotColor: AnyShapeStyle? {
         switch state {
-        case .done: Palette.ok
-        case .failed: Palette.danger
-        case .skipped: Color.secondary
+        case .done: AnyShapeStyle(Palette.done)
+        case .failed: AnyShapeStyle(Palette.danger)
+        case .skipped: AnyShapeStyle(Color.secondary)
         case .pending, .running: nil
         }
     }

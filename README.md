@@ -8,7 +8,7 @@ Every scan and every deletion is done by [Mole](https://github.com/tw93/Mole), t
 
 ## What's inside
 
-**Dig.** One scan runs Mole's previews for caches, installers and build leftovers. Each finding lights up as a vein in your home folder's layer. Uncheck what you want to keep, press Clear, and the ground settles into the space you got back. Tune up (Mole's maintenance tasks) and live CPU, memory and battery sit in the toolbar.
+**Dig.** One scan runs Mole's previews for caches, installers and build leftovers while a worm searches your home folder's layer. Each finding lights up as a thread along its trail. Uncheck what you want to keep, press Clear, and the marked dots drop away as the ground settles into the space you got back. Tune up (Mole's maintenance tasks) and live CPU, memory and battery sit in the toolbar.
 
 **Apps.** Pick an app, or drop one on the panel, to see everything that leaves with it: the app, its data, caches and settings, and your personal data if you choose. Apps that still carry Intel code can be slimmed instead.
 
@@ -16,7 +16,7 @@ Every scan and every deletion is done by [Mole](https://github.com/tw93/Mole), t
 
 **Log.** Everything Mole removed or changed, with the files of each run.
 
-**Settings** (⌘,) edits the same files as the Mole command line: protected paths, project folders, and Touch ID for administrator tasks.
+**Settings** (⌘,) picks the color palette (Moonlight, Ember, Lagoon or Iris) and edits the same files as the Mole command line: protected paths, project folders, and Touch ID for administrator tasks.
 
 ## Safety
 

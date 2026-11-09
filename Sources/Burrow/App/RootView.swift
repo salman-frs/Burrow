@@ -84,7 +84,7 @@ private struct NavRow: View {
                     }
                 }
                 .frame(width: 20)
-                .foregroundStyle(selected ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(.secondary))
+                .foregroundStyle(selected ? AnyShapeStyle(Palette.accent) : AnyShapeStyle(.secondary))
                 Text(section.title)
                     .font(.system(size: 13.5, weight: .medium))
                     .foregroundStyle(selected || hovering ? .primary : .secondary)
@@ -112,9 +112,9 @@ private struct NavRow: View {
                 Spinner(size: 13)
             case .ready where app.dig.selectedTotal > 0:
                 Circle()
-                    .fill(Palette.amber)
+                    .fill(Palette.accent)
                     .frame(width: 8, height: 8)
-                    .background(Circle().fill(Palette.amber.opacity(0.25)).frame(width: 14, height: 14))
+                    .background(Circle().fill(Palette.accent.opacity(0.25)).frame(width: 14, height: 14))
                     .help("\(ByteText.string(app.dig.selectedTotal)) ready to clear")
             case .idle, .ready, .done:
                 EmptyView()
@@ -173,7 +173,7 @@ private struct MissingEngineView: View {
         VStack(spacing: 14) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 40, weight: .light))
-                .foregroundStyle(Palette.amberText)
+                .foregroundStyle(Palette.accentText)
             Text("Mole is missing from this copy of Burrow").font(.title3.weight(.semibold))
             Text("Download Burrow again, or build it with scripts/build-app.sh.")
                 .foregroundStyle(.secondary)
@@ -192,9 +192,9 @@ struct PasswordSheet: View {
         VStack(spacing: 0) {
             Image(systemName: "lock.fill")
                 .font(.system(size: 22, weight: .medium))
-                .foregroundStyle(Palette.amberText)
+                .foregroundStyle(Palette.accentText)
                 .frame(width: 52, height: 52)
-                .background(Circle().fill(Palette.amber.opacity(0.18)))
+                .background(Circle().fill(Palette.accent.opacity(0.18)))
             Text("Administrator access")
                 .font(.system(size: 16, weight: .semibold))
                 .padding(.top, 14)
@@ -212,7 +212,7 @@ struct PasswordSheet: View {
                 .background(Palette.hover, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(focused ? Palette.amber : Palette.hairline, lineWidth: 1)
+                        .strokeBorder(focused ? AnyShapeStyle(Palette.accent) : AnyShapeStyle(Palette.hairline), lineWidth: 1)
                 }
                 .padding(.top, 18)
             Text(request.attempt > 1 ? "That password didn't work. Try again." : "Mole uses it once. Burrow never stores it.")
@@ -225,7 +225,7 @@ struct PasswordSheet: View {
                     .buttonStyle(QuietButtonStyle(height: 36))
                     .keyboardShortcut(.cancelAction)
                 Button("Allow", action: allow)
-                    .buttonStyle(AmberButtonStyle(height: 36))
+                    .buttonStyle(AccentButtonStyle(height: 36))
                     .keyboardShortcut(.defaultAction)
                     .disabled(password.isEmpty)
             }

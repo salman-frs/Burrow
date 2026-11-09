@@ -4,6 +4,7 @@ import SwiftUI
 struct SpaceView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accent) private var accent
     @ViewState private var hover: FieldHover?
     @ViewState private var focus: Int?
 
@@ -64,7 +65,7 @@ struct SpaceView: View {
         }
         let stratum = model.field.strata[cell.stratum]
         focus = cell.stratum
-        hover = FieldHover(location: location, swatch: FieldTheme.of(scheme).color(of: stratum.shade).color(),
+        hover = FieldHover(location: location, swatch: FieldTheme(scheme: scheme, accent: accent).color(of: stratum.shade).color(),
                            title: stratum.name, detail: ByteText.string(stratum.bytes))
     }
 
@@ -146,10 +147,11 @@ private struct SpaceInspector: View {
     @Bindable var model: SpaceModel
     @Binding var focus: Int?
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accent) private var accent
 
     var body: some View {
         let items = model.items
-        let theme = FieldTheme.of(scheme)
+        let theme = FieldTheme(scheme: scheme, accent: accent)
         let strata = model.strata(for: items)
         VStack(spacing: 0) {
             ScrollView {
@@ -201,7 +203,7 @@ private struct StratumRow: View {
             HStack(spacing: 6) {
                 Text(item.name).lineLimit(1).truncationMode(.middle)
                 if item.insight {
-                    Image(systemName: "eye").font(.system(size: 11, weight: .semibold)).foregroundStyle(Palette.amberText)
+                    Image(systemName: "eye").font(.system(size: 11, weight: .semibold)).foregroundStyle(Palette.accentText)
                 }
             }
             .font(.system(size: 13, weight: .medium))
@@ -255,7 +257,7 @@ private struct SpaceDetail: View {
             }
             if item.insight {
                 HStack(spacing: 9) {
-                    Image(systemName: "eye").foregroundStyle(Palette.amberText)
+                    Image(systemName: "eye").foregroundStyle(Palette.accentText)
                     (Text(item.cleanable ? "Mole can clear this. " : "Often safe to clear. ")
                         + Text("Check what's inside first.").foregroundStyle(.primary))
                         .foregroundStyle(.secondary)
@@ -264,7 +266,7 @@ private struct SpaceDetail: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.amber.opacity(0.13), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Palette.accent.opacity(0.13), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             if let path = item.path {
                 VStack(spacing: 8) {
@@ -282,7 +284,7 @@ private struct SpaceDetail: View {
                         Button { model.pendingTrash = item } label: {
                             Label("Move to Trash", systemImage: "trash").frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(AmberButtonStyle(height: 36))
+                        .buttonStyle(AccentButtonStyle(height: 36))
                     }
                 }
             }

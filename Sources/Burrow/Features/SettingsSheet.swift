@@ -13,10 +13,14 @@ struct SettingsSheet: View {
         let model = app.settings
         VStack(alignment: .leading, spacing: 0) {
             Text("Settings").font(.system(size: 16, weight: .semibold))
-            Text("Shared with the Mole command line.")
+            Text("Keep lists and project folders are shared with the Mole command line.")
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
                 .padding(.bottom, 20)
+
+            Group(label: "Palette", symbol: "paintpalette") {
+                PalettePicker()
+            }
 
             Group(label: "Always keep", symbol: "shield.lefthalf.filled") {
                 ScrollView {
@@ -47,7 +51,7 @@ struct SettingsSheet: View {
                     Button("Restore Mole's defaults") { model.restoreMoleDefaults() }
                         .buttonStyle(.plain)
                         .font(.system(size: 12))
-                        .foregroundStyle(Palette.amberText)
+                        .foregroundStyle(Palette.accentText)
                         .padding(.top, 8)
                 }
             }
@@ -82,7 +86,7 @@ struct SettingsSheet: View {
                 ))
                 .labelsHidden()
                 .toggleStyle(.switch)
-                .tint(Palette.amber)
+                .tint(Palette.accent)
                 .disabled(model.touchID == .unknown || model.touchIDBusy)
             }
             .padding(.top, 14)
@@ -103,7 +107,7 @@ struct SettingsSheet: View {
                 .help("Free software under the GNU GPL v3. Every scan and cleanup runs through Mole by tw93.")
                 Spacer()
                 Button("Done") { dismiss() }
-                    .buttonStyle(AmberButtonStyle(height: 36))
+                    .buttonStyle(AccentButtonStyle(height: 36))
                     .keyboardShortcut(.defaultAction)
             }
             .padding(.top, 18)
@@ -162,6 +166,32 @@ private struct Group<Content: View>: View {
             content
         }
         .padding(.bottom, 18)
+    }
+}
+
+private struct PalettePicker: View {
+    @AppStorage(AccentPalette.storageKey) private var palette = AccentPalette.moonlight
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(AccentPalette.allCases) { choice in
+                let picked = palette == choice
+                Button { palette = choice } label: {
+                    HStack(spacing: 7) {
+                        Circle().fill(choice.accent.fill.color).frame(width: 12, height: 12)
+                        Text(choice.name).foregroundStyle(picked ? .primary : .secondary)
+                    }
+                    .font(.system(size: 12.5, weight: picked ? .semibold : .regular))
+                    .padding(.horizontal, 12)
+                    .frame(height: 30)
+                    .background(Capsule().fill(picked ? Palette.selected : Palette.hover))
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .focusEffectDisabled()
+                .accessibilityAddTraits(picked ? .isSelected : [])
+            }
+        }
     }
 }
 
@@ -227,7 +257,7 @@ private struct PatternField: View {
         .padding(.trailing, 4)
         .frame(height: 30)
         .background(Capsule().fill(Palette.hover))
-        .overlay(Capsule().strokeBorder(Palette.amber, lineWidth: 1))
+        .overlay(Capsule().strokeBorder(Palette.accent, lineWidth: 1))
         .onAppear { focused = true }
     }
 }
